@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-03-26
+
+### Fixed
+- `is all-up-to-date`: use `git ls-remote` subprocess instead of libgit2 for remote ref resolution, fixing hangs with SSH URLs
+
 ## [0.2.1] - 2026-03-26
 
 ### Fixed

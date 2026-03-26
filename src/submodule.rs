@@ -80,22 +80,22 @@ pub fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<St
     Ok(entry.id.to_string())
 }
 
-pub fn git_ls_remote(repo: &git2::Repository, url: &str, branch: &str) -> Result<String, String> {
+pub fn git_ls_remote(_repo: &git2::Repository, url: &str, branch: &str) -> Result<String, String> {
     let refspec = format!("{}{branch}", strings::REFS_HEADS_PREFIX);
-    let mut remote = repo
-        .remote_anonymous(url)
-        .map_err(|e| strings::err_create_remote(url, &e))?;
-    let mut callbacks = git2::RemoteCallbacks::new();
-    callbacks.credentials(|_url, username, _allowed| {
-        git2::Cred::ssh_key_from_agent(username.unwrap_or("git"))
-    });
-    remote
-        .connect_auth(git2::Direction::Fetch, Some(callbacks), None)
+    let output = std::process::Command::new("git")
+        .args(["ls-remote", url, &refspec])
+        .output()
         .map_err(|e| strings::err_connect_remote(url, &e))?;
-    let list = remote.list().map_err(|e| strings::err_list_refs(url, &e))?;
-    list.iter()
-        .find(|r| r.name() == refspec)
-        .map(|r| r.oid().to_string())
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(strings::err_connect_remote(url, &stderr.trim()));
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    stdout
+        .lines()
+        .find(|line| line.ends_with(&refspec))
+        .and_then(|line| line.split_whitespace().next())
+        .map(|sha| sha.to_string())
         .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
