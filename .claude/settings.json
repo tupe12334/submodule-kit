@@ -9,7 +9,16 @@
       "Bash(cargo check:*)",
       "Bash(git config:*)",
       "Bash(git remote:*)",
-      "Bash(pnpx cspell:*)"
+      "Bash(pnpx cspell:*)",
+      "Bash(wc:*)",
+      "Bash(npm --version)",
+      "Bash(pnpm init:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo run:*)"
     ]
   }
 }

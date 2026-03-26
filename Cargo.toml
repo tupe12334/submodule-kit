@@ -7,6 +7,8 @@ description = "A CLI toolkit for managing git submodules"
 repository = "https://github.com/tupe12334/submodule-kit"
 readme = "README.md"
 license = "MIT"
+keywords = ["git", "submodule", "cli"]
+categories = ["command-line-utilities", "development-tools"]
 
 [lints.clippy]
 all = "deny"
