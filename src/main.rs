@@ -32,7 +32,7 @@ fn main() {
 
     match cli.command {
         Commands::List => {
-            println!("{}", strings::MSG_LISTING_SUBMODULES);
+            commands::is::list();
         }
         Commands::Is { condition } => {
             commands::is::run(condition);
