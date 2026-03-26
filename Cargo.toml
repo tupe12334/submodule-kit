@@ -8,6 +8,9 @@ repository = "https://github.com/tupe12334/submodule-kit"
 readme = "README.md"
 license = "MIT"
 
+[lints.clippy]
+all = "deny"
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 clap-markdown = "0.1"
