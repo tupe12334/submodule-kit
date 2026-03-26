@@ -1,5 +1,6 @@
 mod commands;
 mod strings;
+mod submodule;
 
 use clap::{Parser, Subcommand};
 use commands::is::IsCondition;
@@ -29,7 +30,7 @@ fn main() {
 
     match cli.command {
         Commands::List => {
-            if let Err(e) = commands::is::list() {
+            if let Err(e) = commands::list::run() {
                 eprintln!("error: {e}");
                 std::process::exit(2);
             }

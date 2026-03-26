@@ -1,5 +1,5 @@
-use super::super::{SubmoduleInfo, parse_gitmodules_str};
 use crate::strings;
+use crate::submodule::{SubmoduleInfo, parse_gitmodules_str};
 use std::fs;
 use std::path::Path;
 

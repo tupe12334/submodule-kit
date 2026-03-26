@@ -1,7 +1,7 @@
-use super::super::{
+use crate::strings;
+use crate::submodule::{
     SubmoduleInfo, git_ls_remote, git_rev_parse_submodule, parse_gitmodules_str, short,
 };
-use crate::strings;
 use std::fs;
 
 pub fn run() -> Result<bool, String> {

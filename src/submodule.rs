@@ -1,16 +1,14 @@
 use crate::strings;
 use std::path::Path;
 
+#[derive(Debug)]
 pub struct SubmoduleInfo {
     pub path: String,
     pub url: String,
     pub branch: Option<String>,
 }
 
-pub fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
-    let content = std::fs::read_to_string(strings::GITMODULES_FILE)
-        .map_err(|e| strings::err_read_gitmodules(&e))?;
-
+pub fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, String> {
     let mut submodules: Vec<SubmoduleInfo> = Vec::new();
     let mut current_name: Option<String> = None;
     let mut current_path: Option<String> = None;
@@ -68,6 +66,12 @@ pub fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
     Ok(submodules)
 }
 
+pub fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
+    let content = std::fs::read_to_string(strings::GITMODULES_FILE)
+        .map_err(|e| strings::err_read_gitmodules(&e))?;
+    parse_gitmodules_str(&content)
+}
+
 pub fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<String, String> {
     let index = repo.index().map_err(|e| strings::err_open_index(&e))?;
     let entry = index
@@ -94,3 +98,7 @@ pub fn git_ls_remote(repo: &git2::Repository, url: &str, branch: &str) -> Result
 pub fn short(sha: &str) -> &str {
     &sha[..sha.len().min(7)]
 }
+
+#[cfg(test)]
+#[path = "submodule_tests.rs"]
+mod tests;

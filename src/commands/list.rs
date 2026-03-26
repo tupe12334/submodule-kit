@@ -1,14 +1,7 @@
 use crate::submodule::parse_gitmodules;
 
-pub fn run() {
-    let submodules = match parse_gitmodules() {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: {e}");
-            std::process::exit(2);
-        }
-    };
-
+pub fn run() -> Result<(), String> {
+    let submodules = parse_gitmodules()?;
     let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
     for sub in &submodules {
         match &sub.branch {
@@ -16,4 +9,9 @@ pub fn run() {
             None => println!("{:<col_width$}  {}", sub.path, sub.url),
         }
     }
+    Ok(())
 }
+
+#[cfg(test)]
+#[path = "list_tests.rs"]
+mod tests;
