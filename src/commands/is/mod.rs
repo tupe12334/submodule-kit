@@ -1,7 +1,7 @@
 use clap::Subcommand;
 use std::fs;
 use std::path::Path;
-use std::process::{Command, exit};
+use std::process::exit;
 
 #[derive(Subcommand)]
 pub enum IsCondition {
@@ -87,42 +87,30 @@ fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
     Ok(submodules)
 }
 
-fn git_rev_parse_submodule(path: &str) -> Result<String, String> {
-    let output = Command::new("git")
-        .args(["rev-parse", &format!(":{path}")])
-        .output()
-        .map_err(|e| format!("failed to run git rev-parse: {e}"))?;
-
-    if !output.status.success() {
-        return Err(format!(
-            "git rev-parse :{path} failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
-    }
-
-    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<String, String> {
+    let index = repo
+        .index()
+        .map_err(|e| format!("failed to open index: {e}"))?;
+    let entry = index
+        .get_path(Path::new(path), 0)
+        .ok_or_else(|| format!("submodule '{path}' not found in index"))?;
+    Ok(entry.id.to_string())
 }
 
-fn git_ls_remote(url: &str, branch: &str) -> Result<String, String> {
+fn git_ls_remote(repo: &git2::Repository, url: &str, branch: &str) -> Result<String, String> {
     let refspec = format!("refs/heads/{branch}");
-    let output = Command::new("git")
-        .args(["ls-remote", url, &refspec])
-        .output()
-        .map_err(|e| format!("failed to run git ls-remote: {e}"))?;
-
-    if !output.status.success() {
-        return Err(format!(
-            "git ls-remote {url} {refspec} failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    stdout
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().next())
-        .map(str::to_string)
+    let mut remote = repo
+        .remote_anonymous(url)
+        .map_err(|e| format!("failed to create remote for {url}: {e}"))?;
+    remote
+        .connect(git2::Direction::Fetch)
+        .map_err(|e| format!("failed to connect to {url}: {e}"))?;
+    let list = remote
+        .list()
+        .map_err(|e| format!("failed to list refs at {url}: {e}"))?;
+    list.iter()
+        .find(|r| r.name() == refspec)
+        .map(|r| r.oid().to_string())
         .ok_or_else(|| format!("ref {refspec} not found at {url}"))
 }
 
@@ -150,13 +138,21 @@ fn all_up_to_date() {
         }
     }
 
+    let repo = match git2::Repository::open(".") {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("error: failed to open git repository: {e}");
+            exit(2);
+        }
+    };
+
     let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
     let mut all_ok = true;
 
     for sub in &submodules {
         let branch = sub.branch.as_deref().unwrap();
 
-        let parent_sha = match git_rev_parse_submodule(&sub.path) {
+        let parent_sha = match git_rev_parse_submodule(&repo, &sub.path) {
             Ok(sha) => sha,
             Err(e) => {
                 eprintln!("error: {e}");
@@ -164,7 +160,7 @@ fn all_up_to_date() {
             }
         };
 
-        let remote_sha = match git_ls_remote(&sub.url, branch) {
+        let remote_sha = match git_ls_remote(&repo, &sub.url, branch) {
             Ok(sha) => sha,
             Err(e) => {
                 eprintln!("error: {e}");
