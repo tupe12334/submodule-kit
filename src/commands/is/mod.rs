@@ -1,3 +1,4 @@
+use crate::strings;
 use clap::Subcommand;
 use std::fs;
 use std::path::Path;
@@ -34,8 +35,8 @@ struct SubmoduleInfo {
 }
 
 fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
-    let content = fs::read_to_string(".gitmodules")
-        .map_err(|e| format!("Failed to read .gitmodules: {e}"))?;
+    let content = fs::read_to_string(strings::GITMODULES_FILE)
+        .map_err(|e| strings::err_read_gitmodules(&e))?;
 
     let mut submodules: Vec<SubmoduleInfo> = Vec::new();
     let mut current_name: Option<String> = None;
@@ -49,17 +50,15 @@ fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
                  branch: Option<String>,
                  out: &mut Vec<SubmoduleInfo>|
      -> Result<(), String> {
-        let path =
-            path.ok_or_else(|| format!("submodule '{name}' is missing 'path =' in .gitmodules"))?;
-        let url =
-            url.ok_or_else(|| format!("submodule '{name}' is missing 'url =' in .gitmodules"))?;
+        let path = path.ok_or_else(|| strings::err_missing_path(&name))?;
+        let url = url.ok_or_else(|| strings::err_missing_url(&name))?;
         out.push(SubmoduleInfo { path, url, branch });
         Ok(())
     };
 
     for line in content.lines() {
         let line = line.trim();
-        if line.starts_with("[submodule ") && line.ends_with(']') {
+        if line.starts_with(strings::SUBMODULE_SECTION_CHECK) && line.ends_with(']') {
             if let Some(name) = current_name.take() {
                 flush(
                     name,
@@ -70,15 +69,15 @@ fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
                 )?;
             }
             current_name = Some(
-                line.trim_start_matches("[submodule \"")
-                    .trim_end_matches("\"]")
+                line.trim_start_matches(strings::SUBMODULE_SECTION_PREFIX)
+                    .trim_end_matches(strings::SUBMODULE_SECTION_SUFFIX)
                     .to_string(),
             );
-        } else if let Some(v) = line.strip_prefix("path = ") {
+        } else if let Some(v) = line.strip_prefix(strings::KEY_PATH) {
             current_path = Some(v.trim().to_string());
-        } else if let Some(v) = line.strip_prefix("url = ") {
+        } else if let Some(v) = line.strip_prefix(strings::KEY_URL) {
             current_url = Some(v.trim().to_string());
-        } else if let Some(v) = line.strip_prefix("branch = ") {
+        } else if let Some(v) = line.strip_prefix(strings::KEY_BRANCH) {
             current_branch = Some(v.trim().to_string());
         }
     }
@@ -97,30 +96,26 @@ fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
 }
 
 fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<String, String> {
-    let index = repo
-        .index()
-        .map_err(|e| format!("failed to open index: {e}"))?;
+    let index = repo.index().map_err(|e| strings::err_open_index(&e))?;
     let entry = index
         .get_path(Path::new(path), 0)
-        .ok_or_else(|| format!("submodule '{path}' not found in index"))?;
+        .ok_or_else(|| strings::err_not_in_index(path))?;
     Ok(entry.id.to_string())
 }
 
 fn git_ls_remote(repo: &git2::Repository, url: &str, branch: &str) -> Result<String, String> {
-    let refspec = format!("refs/heads/{branch}");
+    let refspec = format!("{}{branch}", strings::REFS_HEADS_PREFIX);
     let mut remote = repo
         .remote_anonymous(url)
-        .map_err(|e| format!("failed to create remote for {url}: {e}"))?;
+        .map_err(|e| strings::err_create_remote(url, &e))?;
     remote
         .connect(git2::Direction::Fetch)
-        .map_err(|e| format!("failed to connect to {url}: {e}"))?;
-    let list = remote
-        .list()
-        .map_err(|e| format!("failed to list refs at {url}: {e}"))?;
+        .map_err(|e| strings::err_connect_remote(url, &e))?;
+    let list = remote.list().map_err(|e| strings::err_list_refs(url, &e))?;
     list.iter()
         .find(|r| r.name() == refspec)
         .map(|r| r.oid().to_string())
-        .ok_or_else(|| format!("ref {refspec} not found at {url}"))
+        .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
 fn short(sha: &str) -> &str {
@@ -139,10 +134,7 @@ fn all_up_to_date() {
     // Validate branch is present for every submodule upfront.
     for sub in &submodules {
         if sub.branch.is_none() {
-            eprintln!(
-                "error: submodule '{}' is missing 'branch =' in .gitmodules",
-                sub.path
-            );
+            eprintln!("error: {}", strings::err_missing_branch(&sub.path));
             exit(2);
         }
     }
@@ -150,7 +142,7 @@ fn all_up_to_date() {
     let repo = match git2::Repository::open(".") {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("error: failed to open git repository: {e}");
+            eprintln!("error: {}", strings::err_open_repo(&e));
             exit(2);
         }
     };
@@ -179,15 +171,19 @@ fn all_up_to_date() {
 
         if parent_sha == remote_sha {
             println!(
-                "{:<col_width$}  up-to-date  {}",
+                "{:<col_width$}  {}  {}",
                 sub.path,
+                strings::STATUS_UP_TO_DATE,
                 short(&parent_sha)
             );
         } else {
             println!(
-                "{:<col_width$}  behind      parent={}  remote={}",
+                "{:<col_width$}  {}      {}={}  {}={}",
                 sub.path,
+                strings::STATUS_BEHIND,
+                strings::LABEL_PARENT,
                 short(&parent_sha),
+                strings::LABEL_REMOTE,
                 short(&remote_sha)
             );
             all_ok = false;
@@ -214,9 +210,9 @@ fn populated() {
     for sub in &submodules {
         // A cloned submodule has a .git file (gitdir pointer) at its root.
         if Path::new(&sub.path).join(".git").exists() {
-            println!("{:<col_width$}  populated", sub.path);
+            println!("{:<col_width$}  {}", sub.path, strings::STATUS_POPULATED);
         } else {
-            println!("{:<col_width$}  missing", sub.path);
+            println!("{:<col_width$}  {}", sub.path, strings::STATUS_MISSING);
             all_ok = false;
         }
     }
@@ -241,14 +237,18 @@ fn clean() {
     for sub in &submodules {
         let sub_path = Path::new(&sub.path);
         if !sub_path.join(".git").exists() {
-            println!("{:<col_width$}  not-populated (skipped)", sub.path);
+            println!(
+                "{:<col_width$}  {}",
+                sub.path,
+                strings::STATUS_NOT_POPULATED_SKIPPED
+            );
             continue;
         }
 
         let sub_repo = match git2::Repository::open(sub_path) {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("error: failed to open submodule '{}': {e}", sub.path);
+                eprintln!("error: {}", strings::err_open_submodule(&sub.path, &e));
                 exit(2);
             }
         };
@@ -259,17 +259,18 @@ fn clean() {
         let statuses = match sub_repo.statuses(Some(&mut opts)) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("error: failed to get status for '{}': {e}", sub.path);
+                eprintln!("error: {}", strings::err_get_status(&sub.path, &e));
                 exit(2);
             }
         };
 
         if statuses.is_empty() {
-            println!("{:<col_width$}  clean", sub.path);
+            println!("{:<col_width$}  {}", sub.path, strings::STATUS_CLEAN);
         } else {
             println!(
-                "{:<col_width$}  dirty ({} changed file(s))",
+                "{:<col_width$}  {} ({} changed file(s))",
                 sub.path,
+                strings::STATUS_DIRTY,
                 statuses.len()
             );
             all_ok = false;
@@ -293,7 +294,7 @@ fn synced() {
     let repo = match git2::Repository::open(".") {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("error: failed to open git repository: {e}");
+            eprintln!("error: {}", strings::err_open_repo(&e));
             exit(2);
         }
     };
@@ -304,7 +305,11 @@ fn synced() {
     for sub in &submodules {
         let sub_path = Path::new(&sub.path);
         if !sub_path.join(".git").exists() {
-            println!("{:<col_width$}  not-populated (skipped)", sub.path);
+            println!(
+                "{:<col_width$}  {}",
+                sub.path,
+                strings::STATUS_NOT_POPULATED_SKIPPED
+            );
             continue;
         }
 
@@ -319,7 +324,7 @@ fn synced() {
         let sub_repo = match git2::Repository::open(sub_path) {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("error: failed to open submodule '{}': {e}", sub.path);
+                eprintln!("error: {}", strings::err_open_submodule(&sub.path, &e));
                 exit(2);
             }
         };
@@ -330,22 +335,26 @@ fn synced() {
                 .map(|c| c.id().to_string())
                 .unwrap_or_default(),
             Err(e) => {
-                eprintln!("error: failed to read HEAD of '{}': {e}", sub.path);
+                eprintln!("error: {}", strings::err_read_head(&sub.path, &e));
                 exit(2);
             }
         };
 
         if recorded_sha == head_sha {
             println!(
-                "{:<col_width$}  synced      {}",
+                "{:<col_width$}  {}      {}",
                 sub.path,
+                strings::STATUS_SYNCED,
                 short(&recorded_sha)
             );
         } else {
             println!(
-                "{:<col_width$}  out-of-sync  recorded={}  local={}",
+                "{:<col_width$}  {}  {}={}  {}={}",
                 sub.path,
+                strings::STATUS_OUT_OF_SYNC,
+                strings::LABEL_RECORDED,
                 short(&recorded_sha),
+                strings::LABEL_LOCAL,
                 short(&head_sha)
             );
             all_ok = false;
@@ -372,14 +381,18 @@ fn on_branch() {
     for sub in &submodules {
         let sub_path = Path::new(&sub.path);
         if !sub_path.join(".git").exists() {
-            println!("{:<col_width$}  not-populated (skipped)", sub.path);
+            println!(
+                "{:<col_width$}  {}",
+                sub.path,
+                strings::STATUS_NOT_POPULATED_SKIPPED
+            );
             continue;
         }
 
         let sub_repo = match git2::Repository::open(sub_path) {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("error: failed to open submodule '{}': {e}", sub.path);
+                eprintln!("error: {}", strings::err_open_submodule(&sub.path, &e));
                 exit(2);
             }
         };
@@ -387,31 +400,46 @@ fn on_branch() {
         let head = match sub_repo.head() {
             Ok(h) => h,
             Err(e) => {
-                eprintln!("error: failed to read HEAD of '{}': {e}", sub.path);
+                eprintln!("error: {}", strings::err_read_head(&sub.path, &e));
                 exit(2);
             }
         };
 
         if head.is_branch() {
-            let current_branch = head.shorthand().unwrap_or("(unknown)");
+            let current_branch = head.shorthand().unwrap_or(strings::LABEL_UNKNOWN);
             match &sub.branch {
                 Some(expected) if current_branch != expected => {
                     println!(
-                        "{:<col_width$}  wrong-branch  current={}  expected={}",
-                        sub.path, current_branch, expected
+                        "{:<col_width$}  {}  {}={}  {}={}",
+                        sub.path,
+                        strings::STATUS_WRONG_BRANCH,
+                        strings::LABEL_CURRENT,
+                        current_branch,
+                        strings::LABEL_EXPECTED,
+                        expected
                     );
                     all_ok = false;
                 }
                 _ => {
-                    println!("{:<col_width$}  on-branch  {}", sub.path, current_branch);
+                    println!(
+                        "{:<col_width$}  {}  {}",
+                        sub.path,
+                        strings::STATUS_ON_BRANCH,
+                        current_branch
+                    );
                 }
             }
         } else {
             let sha = head
                 .peel_to_commit()
                 .map(|c| short_owned(&c.id().to_string()))
-                .unwrap_or_else(|_| "(unknown)".to_string());
-            println!("{:<col_width$}  detached-HEAD  {}", sub.path, sha);
+                .unwrap_or_else(|_| strings::LABEL_UNKNOWN.to_string());
+            println!(
+                "{:<col_width$}  {}  {}",
+                sub.path,
+                strings::STATUS_DETACHED_HEAD,
+                sha
+            );
             all_ok = false;
         }
     }
