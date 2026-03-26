@@ -7,7 +7,6 @@ description = "A CLI toolkit for managing git submodules"
 repository = "https://github.com/tupe12334/submodule-kit"
 readme = "README.md"
 license = "MIT"
-license-file = "LICENSE"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
