@@ -23,6 +23,8 @@ enum Commands {
         #[command(subcommand)]
         condition: IsCondition,
     },
+    #[command(hide = true)]
+    GenerateDocs,
 }
 
 fn main() {
@@ -34,6 +36,9 @@ fn main() {
         }
         Commands::Is { condition } => {
             commands::is::run(condition);
+        }
+        Commands::GenerateDocs => {
+            print!("{}", clap_markdown::help_markdown::<Cli>());
         }
     }
 }
