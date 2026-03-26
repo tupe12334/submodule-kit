@@ -1,23 +1,27 @@
 use clap::Subcommand;
 use std::fs;
+use std::path::Path;
 use std::process::{Command, exit};
 
 #[derive(Subcommand)]
 pub enum IsCondition {
     /// Check whether every submodule's parent-recorded commit matches the tip of its remote branch
     AllUpToDate,
+    /// Check whether all submodules have been initialized and cloned locally
+    Populated,
 }
 
 pub fn run(condition: IsCondition) {
     match condition {
         IsCondition::AllUpToDate => all_up_to_date(),
+        IsCondition::Populated => populated(),
     }
 }
 
 struct SubmoduleInfo {
     path: String,
     url: String,
-    branch: String,
+    branch: Option<String>,
 }
 
 fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
@@ -40,8 +44,6 @@ fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
             path.ok_or_else(|| format!("submodule '{name}' is missing 'path =' in .gitmodules"))?;
         let url =
             url.ok_or_else(|| format!("submodule '{name}' is missing 'url =' in .gitmodules"))?;
-        let branch = branch
-            .ok_or_else(|| format!("submodule '{name}' is missing 'branch =' in .gitmodules"))?;
         out.push(SubmoduleInfo { path, url, branch });
         Ok(())
     };
@@ -137,11 +139,23 @@ fn all_up_to_date() {
         }
     };
 
-    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
+    // Validate branch is present for every submodule upfront.
+    for sub in &submodules {
+        if sub.branch.is_none() {
+            eprintln!(
+                "error: submodule '{}' is missing 'branch =' in .gitmodules",
+                sub.path
+            );
+            exit(2);
+        }
+    }
 
+    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
     let mut all_ok = true;
 
     for sub in &submodules {
+        let branch = sub.branch.as_deref().unwrap();
+
         let parent_sha = match git_rev_parse_submodule(&sub.path) {
             Ok(sha) => sha,
             Err(e) => {
@@ -150,7 +164,7 @@ fn all_up_to_date() {
             }
         };
 
-        let remote_sha = match git_ls_remote(&sub.url, &sub.branch) {
+        let remote_sha = match git_ls_remote(&sub.url, branch) {
             Ok(sha) => sha,
             Err(e) => {
                 eprintln!("error: {e}");
@@ -171,6 +185,33 @@ fn all_up_to_date() {
                 short(&parent_sha),
                 short(&remote_sha)
             );
+            all_ok = false;
+        }
+    }
+
+    if !all_ok {
+        exit(1);
+    }
+}
+
+fn populated() {
+    let submodules = match parse_gitmodules() {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            exit(2);
+        }
+    };
+
+    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
+    let mut all_ok = true;
+
+    for sub in &submodules {
+        // A cloned submodule has a .git file (gitdir pointer) at its root.
+        if Path::new(&sub.path).join(".git").exists() {
+            println!("{:<col_width$}  populated", sub.path);
+        } else {
+            println!("{:<col_width$}  missing", sub.path);
             all_ok = false;
         }
     }
