@@ -37,9 +37,6 @@ pub const LABEL_CURRENT: &str = "current";
 pub const LABEL_EXPECTED: &str = "expected";
 pub const LABEL_UNKNOWN: &str = "(unknown)";
 
-// ── progress messages ─────────────────────────────────────────────────────────
-pub const MSG_LISTING_SUBMODULES: &str = "Listing submodules...";
-
 // ── error messages ────────────────────────────────────────────────────────────
 pub fn err_read_gitmodules(e: &impl std::fmt::Display) -> String {
     format!("Failed to read .gitmodules: {e}")
@@ -96,3 +93,7 @@ pub fn err_get_status(path: &str, e: &impl std::fmt::Display) -> String {
 pub fn err_read_head(path: &str, e: &impl std::fmt::Display) -> String {
     format!("failed to read HEAD of '{path}': {e}")
 }
+
+#[cfg(test)]
+#[path = "strings_tests.rs"]
+mod tests;

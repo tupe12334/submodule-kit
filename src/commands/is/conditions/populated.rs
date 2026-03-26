@@ -1,23 +1,21 @@
-use super::super::parse_gitmodules;
+use super::super::{SubmoduleInfo, parse_gitmodules_str};
 use crate::strings;
+use std::fs;
 use std::path::Path;
-use std::process::exit;
 
-pub fn run() -> bool {
-    let submodules = match parse_gitmodules() {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: {e}");
-            exit(2);
-        }
-    };
+pub fn run() -> Result<bool, String> {
+    let content = fs::read_to_string(strings::GITMODULES_FILE)
+        .map_err(|e| strings::err_read_gitmodules(&e))?;
+    let submodules = parse_gitmodules_str(&content)?;
+    Ok(check(&submodules, Path::new(".")))
+}
 
+pub(crate) fn check(submodules: &[SubmoduleInfo], base_path: &Path) -> bool {
     let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
     let mut all_ok = true;
 
-    for sub in &submodules {
-        // A cloned submodule has a .git file (gitdir pointer) at its root.
-        if Path::new(&sub.path).join(".git").exists() {
+    for sub in submodules {
+        if base_path.join(&sub.path).join(".git").exists() {
             println!("{:<col_width$}  {}", sub.path, strings::STATUS_POPULATED);
         } else {
             println!("{:<col_width$}  {}", sub.path, strings::STATUS_MISSING);
@@ -27,3 +25,7 @@ pub fn run() -> bool {
 
     all_ok
 }
+
+#[cfg(test)]
+#[path = "populated_tests.rs"]
+mod tests;

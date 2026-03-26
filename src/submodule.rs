@@ -1,59 +1,16 @@
 use crate::strings;
-use clap::ValueEnum;
-use std::fs;
 use std::path::Path;
 
-mod conditions;
-
-#[derive(ValueEnum, Clone)]
-pub enum IsCondition {
-    /// Check whether every submodule's parent-recorded commit matches the tip of its remote branch
-    AllUpToDate,
-    /// Check whether all submodules have been initialized and cloned locally
-    Populated,
-    /// Check whether all submodules have no uncommitted changes
-    Clean,
-    /// Check whether each submodule's locally checked-out commit matches what the parent records
-    Synced,
-    /// Check whether all submodules are checked out on their configured branch (not detached HEAD)
-    OnBranch,
+pub struct SubmoduleInfo {
+    pub path: String,
+    pub url: String,
+    pub branch: Option<String>,
 }
 
-#[derive(Debug)]
-pub(crate) struct SubmoduleInfo {
-    pub(crate) path: String,
-    pub(crate) url: String,
-    pub(crate) branch: Option<String>,
-}
+pub fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
+    let content = std::fs::read_to_string(strings::GITMODULES_FILE)
+        .map_err(|e| strings::err_read_gitmodules(&e))?;
 
-pub fn list() -> Result<(), String> {
-    let submodules = parse_gitmodules()?;
-    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
-    for sub in &submodules {
-        match &sub.branch {
-            Some(branch) => println!("{:<col_width$}  {}  (branch: {branch})", sub.path, sub.url),
-            None => println!("{:<col_width$}  {}", sub.path, sub.url),
-        }
-    }
-    Ok(())
-}
-
-pub fn run(conditions: Vec<IsCondition>) -> Result<bool, String> {
-    let mut all_ok = true;
-    for condition in conditions {
-        let passed = match condition {
-            IsCondition::AllUpToDate => conditions::all_up_to_date()?,
-            IsCondition::Populated => conditions::populated()?,
-            IsCondition::Clean => conditions::clean()?,
-            IsCondition::Synced => conditions::synced()?,
-            IsCondition::OnBranch => conditions::on_branch()?,
-        };
-        all_ok = all_ok && passed;
-    }
-    Ok(all_ok)
-}
-
-pub(crate) fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, String> {
     let mut submodules: Vec<SubmoduleInfo> = Vec::new();
     let mut current_name: Option<String> = None;
     let mut current_path: Option<String> = None;
@@ -111,16 +68,7 @@ pub(crate) fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, 
     Ok(submodules)
 }
 
-fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
-    let content = fs::read_to_string(strings::GITMODULES_FILE)
-        .map_err(|e| strings::err_read_gitmodules(&e))?;
-    parse_gitmodules_str(&content)
-}
-
-pub(crate) fn git_rev_parse_submodule(
-    repo: &git2::Repository,
-    path: &str,
-) -> Result<String, String> {
+pub fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<String, String> {
     let index = repo.index().map_err(|e| strings::err_open_index(&e))?;
     let entry = index
         .get_path(Path::new(path), 0)
@@ -128,11 +76,7 @@ pub(crate) fn git_rev_parse_submodule(
     Ok(entry.id.to_string())
 }
 
-pub(crate) fn git_ls_remote(
-    repo: &git2::Repository,
-    url: &str,
-    branch: &str,
-) -> Result<String, String> {
+pub fn git_ls_remote(repo: &git2::Repository, url: &str, branch: &str) -> Result<String, String> {
     let refspec = format!("{}{branch}", strings::REFS_HEADS_PREFIX);
     let mut remote = repo
         .remote_anonymous(url)
@@ -147,13 +91,6 @@ pub(crate) fn git_ls_remote(
         .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
-pub(crate) fn short(sha: &str) -> &str {
+pub fn short(sha: &str) -> &str {
     &sha[..sha.len().min(7)]
 }
-
-#[cfg(test)]
-pub(crate) static CWD_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-#[cfg(test)]
-#[path = "mod_tests.rs"]
-mod tests;

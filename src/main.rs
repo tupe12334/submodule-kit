@@ -29,11 +29,19 @@ fn main() {
 
     match cli.command {
         Commands::List => {
-            commands::is::list();
+            if let Err(e) = commands::is::list() {
+                eprintln!("error: {e}");
+                std::process::exit(2);
+            }
         }
-        Commands::Is { conditions } => {
-            commands::is::run(conditions);
-        }
+        Commands::Is { conditions } => match commands::is::run(conditions) {
+            Ok(true) => {}
+            Ok(false) => std::process::exit(1),
+            Err(e) => {
+                eprintln!("error: {e}");
+                std::process::exit(2);
+            }
+        },
         Commands::GenerateDocs => {
             print!(
                 "{}\n## License\n\nMIT — see [LICENSE](LICENSE)\n",
