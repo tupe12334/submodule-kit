@@ -1,4 +1,4 @@
-use super::super::parse_gitmodules;
+use super::super::{parse_gitmodules, short};
 use crate::strings;
 use std::path::Path;
 use std::process::exit;
@@ -69,7 +69,10 @@ pub fn run() -> bool {
         } else {
             let sha = head
                 .peel_to_commit()
-                .map(|c| short_owned(&c.id().to_string()))
+                .map(|c| {
+                    let full = c.id().to_string();
+                    short(&full).to_string()
+                })
                 .unwrap_or_else(|_| strings::LABEL_UNKNOWN.to_string());
             println!(
                 "{:<col_width$}  {}  {}",
@@ -82,8 +85,4 @@ pub fn run() -> bool {
     }
 
     all_ok
-}
-
-fn short_owned(sha: &str) -> String {
-    sha[..sha.len().min(7)].to_string()
 }
