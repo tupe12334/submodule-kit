@@ -9,12 +9,21 @@ pub enum IsCondition {
     AllUpToDate,
     /// Check whether all submodules have been initialized and cloned locally
     Populated,
+    /// Check whether all submodules have no uncommitted changes
+    Clean,
+    /// Check whether each submodule's locally checked-out commit matches what the parent records
+    Synced,
+    /// Check whether all submodules are checked out on their configured branch (not detached HEAD)
+    OnBranch,
 }
 
 pub fn run(condition: IsCondition) {
     match condition {
         IsCondition::AllUpToDate => all_up_to_date(),
         IsCondition::Populated => populated(),
+        IsCondition::Clean => clean(),
+        IsCondition::Synced => synced(),
+        IsCondition::OnBranch => on_branch(),
     }
 }
 
@@ -215,4 +224,203 @@ fn populated() {
     if !all_ok {
         exit(1);
     }
+}
+
+fn clean() {
+    let submodules = match parse_gitmodules() {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            exit(2);
+        }
+    };
+
+    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
+    let mut all_ok = true;
+
+    for sub in &submodules {
+        let sub_path = Path::new(&sub.path);
+        if !sub_path.join(".git").exists() {
+            println!("{:<col_width$}  not-populated (skipped)", sub.path);
+            continue;
+        }
+
+        let sub_repo = match git2::Repository::open(sub_path) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("error: failed to open submodule '{}': {e}", sub.path);
+                exit(2);
+            }
+        };
+
+        let mut opts = git2::StatusOptions::new();
+        opts.include_untracked(false).exclude_submodules(true);
+
+        let statuses = match sub_repo.statuses(Some(&mut opts)) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("error: failed to get status for '{}': {e}", sub.path);
+                exit(2);
+            }
+        };
+
+        if statuses.is_empty() {
+            println!("{:<col_width$}  clean", sub.path);
+        } else {
+            println!(
+                "{:<col_width$}  dirty ({} changed file(s))",
+                sub.path,
+                statuses.len()
+            );
+            all_ok = false;
+        }
+    }
+
+    if !all_ok {
+        exit(1);
+    }
+}
+
+fn synced() {
+    let submodules = match parse_gitmodules() {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            exit(2);
+        }
+    };
+
+    let repo = match git2::Repository::open(".") {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("error: failed to open git repository: {e}");
+            exit(2);
+        }
+    };
+
+    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
+    let mut all_ok = true;
+
+    for sub in &submodules {
+        let sub_path = Path::new(&sub.path);
+        if !sub_path.join(".git").exists() {
+            println!("{:<col_width$}  not-populated (skipped)", sub.path);
+            continue;
+        }
+
+        let recorded_sha = match git_rev_parse_submodule(&repo, &sub.path) {
+            Ok(sha) => sha,
+            Err(e) => {
+                eprintln!("error: {e}");
+                exit(2);
+            }
+        };
+
+        let sub_repo = match git2::Repository::open(sub_path) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("error: failed to open submodule '{}': {e}", sub.path);
+                exit(2);
+            }
+        };
+
+        let head_sha = match sub_repo.head() {
+            Ok(head) => head
+                .peel_to_commit()
+                .map(|c| c.id().to_string())
+                .unwrap_or_default(),
+            Err(e) => {
+                eprintln!("error: failed to read HEAD of '{}': {e}", sub.path);
+                exit(2);
+            }
+        };
+
+        if recorded_sha == head_sha {
+            println!(
+                "{:<col_width$}  synced      {}",
+                sub.path,
+                short(&recorded_sha)
+            );
+        } else {
+            println!(
+                "{:<col_width$}  out-of-sync  recorded={}  local={}",
+                sub.path,
+                short(&recorded_sha),
+                short(&head_sha)
+            );
+            all_ok = false;
+        }
+    }
+
+    if !all_ok {
+        exit(1);
+    }
+}
+
+fn on_branch() {
+    let submodules = match parse_gitmodules() {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            exit(2);
+        }
+    };
+
+    let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
+    let mut all_ok = true;
+
+    for sub in &submodules {
+        let sub_path = Path::new(&sub.path);
+        if !sub_path.join(".git").exists() {
+            println!("{:<col_width$}  not-populated (skipped)", sub.path);
+            continue;
+        }
+
+        let sub_repo = match git2::Repository::open(sub_path) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("error: failed to open submodule '{}': {e}", sub.path);
+                exit(2);
+            }
+        };
+
+        let head = match sub_repo.head() {
+            Ok(h) => h,
+            Err(e) => {
+                eprintln!("error: failed to read HEAD of '{}': {e}", sub.path);
+                exit(2);
+            }
+        };
+
+        if head.is_branch() {
+            let current_branch = head.shorthand().unwrap_or("(unknown)");
+            match &sub.branch {
+                Some(expected) if current_branch != expected => {
+                    println!(
+                        "{:<col_width$}  wrong-branch  current={}  expected={}",
+                        sub.path, current_branch, expected
+                    );
+                    all_ok = false;
+                }
+                _ => {
+                    println!("{:<col_width$}  on-branch  {}", sub.path, current_branch);
+                }
+            }
+        } else {
+            let sha = head
+                .peel_to_commit()
+                .map(|c| short_owned(&c.id().to_string()))
+                .unwrap_or_else(|_| "(unknown)".to_string());
+            println!("{:<col_width$}  detached-HEAD  {}", sub.path, sha);
+            all_ok = false;
+        }
+    }
+
+    if !all_ok {
+        exit(1);
+    }
+}
+
+fn short_owned(sha: &str) -> String {
+    sha[..sha.len().min(7)].to_string()
 }

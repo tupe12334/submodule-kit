@@ -1,4 +1,5 @@
 mod commands;
+mod strings;
 
 use clap::{Parser, Subcommand};
 use commands::is::IsCondition;
@@ -29,7 +30,7 @@ fn main() {
 
     match cli.command {
         Commands::List => {
-            println!("Listing submodules...");
+            println!("{}", strings::MSG_LISTING_SUBMODULES);
         }
         Commands::Is { condition } => {
             commands::is::run(condition);
