@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-26
+
+### Fixed
+- `is all-up-to-date`: SSH remote connections now use the SSH agent for authentication, fixing "authentication required but no callback set" errors
+
+## [0.2.0] - 2026-03-26
+
 ### Changed
 - Moved `list` command out of `is` module into its own `commands/list` module
 

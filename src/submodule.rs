@@ -85,8 +85,12 @@ pub fn git_ls_remote(repo: &git2::Repository, url: &str, branch: &str) -> Result
     let mut remote = repo
         .remote_anonymous(url)
         .map_err(|e| strings::err_create_remote(url, &e))?;
+    let mut callbacks = git2::RemoteCallbacks::new();
+    callbacks.credentials(|_url, username, _allowed| {
+        git2::Cred::ssh_key_from_agent(username.unwrap_or("git"))
+    });
     remote
-        .connect(git2::Direction::Fetch)
+        .connect_auth(git2::Direction::Fetch, Some(callbacks), None)
         .map_err(|e| strings::err_connect_remote(url, &e))?;
     let list = remote.list().map_err(|e| strings::err_list_refs(url, &e))?;
     list.iter()
