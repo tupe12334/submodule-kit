@@ -5,3 +5,4 @@ cargo fmt --check
 cargo clippy -- -D warnings
 cargo test
 cargo build --release
+pnpx cspell --no-progress

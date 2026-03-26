@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en",
+  "files": ["**/*.{rs,md,toml}"],
+  "ignorePaths": ["target/**", "node_modules/**", "Cargo.lock"],
+  "words": ["refspec", "gitdir", "tupe"],
+  "dictionaries": ["en_US"]
+}
