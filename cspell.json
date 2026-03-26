@@ -4,6 +4,6 @@
   "language": "en",
   "files": ["**/*.{rs,md,toml}"],
   "ignorePaths": ["target/**", "node_modules/**", "Cargo.lock"],
-  "words": ["refspec", "gitdir", "tupe", "clippy"],
+  "words": ["refspec", "gitdir", "tupe", "clippy", "treebuilder", "longname", "repositoryformatversion", "mymod", "mypath"],
   "dictionaries": ["en_US"]
 }
