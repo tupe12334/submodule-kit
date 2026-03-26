@@ -8,7 +8,8 @@
       "Bash(git push:*)",
       "Bash(cargo check:*)",
       "Bash(git config:*)",
-      "Bash(git remote:*)"
+      "Bash(git remote:*)",
+      "Bash(pnpx cspell:*)"
     ]
   }
 }

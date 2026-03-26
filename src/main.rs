@@ -18,11 +18,8 @@ struct Cli {
 enum Commands {
     /// List all submodules
     List,
-    /// Check a condition about submodules; exits 0 (true) or 1 (false)
-    Is {
-        #[command(subcommand)]
-        condition: IsCondition,
-    },
+    /// Check one or more conditions about submodules; exits 0 (all true) or 1 (any false)
+    Is { conditions: Vec<IsCondition> },
     #[command(hide = true)]
     GenerateDocs,
 }
@@ -34,8 +31,8 @@ fn main() {
         Commands::List => {
             commands::is::list();
         }
-        Commands::Is { condition } => {
-            commands::is::run(condition);
+        Commands::Is { conditions } => {
+            commands::is::run(conditions);
         }
         Commands::GenerateDocs => {
             print!(

@@ -2,7 +2,7 @@ use super::super::{git_ls_remote, git_rev_parse_submodule, parse_gitmodules, sho
 use crate::strings;
 use std::process::exit;
 
-pub fn run() {
+pub fn run() -> bool {
     let submodules = match parse_gitmodules() {
         Ok(s) => s,
         Err(e) => {
@@ -70,7 +70,5 @@ pub fn run() {
         }
     }
 
-    if !all_ok {
-        exit(1);
-    }
+    all_ok
 }

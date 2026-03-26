@@ -7,11 +7,6 @@ This document contains the help content for the `submodule-kit` command-line pro
 * [`submodule-kit`↴](#submodule-kit)
 * [`submodule-kit list`↴](#submodule-kit-list)
 * [`submodule-kit is`↴](#submodule-kit-is)
-* [`submodule-kit is all-up-to-date`↴](#submodule-kit-is-all-up-to-date)
-* [`submodule-kit is populated`↴](#submodule-kit-is-populated)
-* [`submodule-kit is clean`↴](#submodule-kit-is-clean)
-* [`submodule-kit is synced`↴](#submodule-kit-is-synced)
-* [`submodule-kit is on-branch`↴](#submodule-kit-is-on-branch)
 
 ## `submodule-kit`
 
@@ -22,7 +17,7 @@ A CLI toolkit for managing git submodules
 ###### **Subcommands:**
 
 * `list` — List all submodules
-* `is` — Check a condition about submodules; exits 0 (true) or 1 (false)
+* `is` — Check one or more conditions about submodules; exits 0 (all true) or 1 (any false)
 
 
 
@@ -36,57 +31,26 @@ List all submodules
 
 ## `submodule-kit is`
 
-Check a condition about submodules; exits 0 (true) or 1 (false)
+Check one or more conditions about submodules; exits 0 (all true) or 1 (any false)
 
-**Usage:** `submodule-kit is <COMMAND>`
+**Usage:** `submodule-kit is [CONDITIONS]...`
 
-###### **Subcommands:**
+###### **Arguments:**
 
-* `all-up-to-date` — Check whether every submodule's parent-recorded commit matches the tip of its remote branch
-* `populated` — Check whether all submodules have been initialized and cloned locally
-* `clean` — Check whether all submodules have no uncommitted changes
-* `synced` — Check whether each submodule's locally checked-out commit matches what the parent records
-* `on-branch` — Check whether all submodules are checked out on their configured branch (not detached HEAD)
+* `<CONDITIONS>`
 
+  Possible values:
+  - `all-up-to-date`:
+    Check whether every submodule's parent-recorded commit matches the tip of its remote branch
+  - `populated`:
+    Check whether all submodules have been initialized and cloned locally
+  - `clean`:
+    Check whether all submodules have no uncommitted changes
+  - `synced`:
+    Check whether each submodule's locally checked-out commit matches what the parent records
+  - `on-branch`:
+    Check whether all submodules are checked out on their configured branch (not detached HEAD)
 
-
-## `submodule-kit is all-up-to-date`
-
-Check whether every submodule's parent-recorded commit matches the tip of its remote branch
-
-**Usage:** `submodule-kit is all-up-to-date`
-
-
-
-## `submodule-kit is populated`
-
-Check whether all submodules have been initialized and cloned locally
-
-**Usage:** `submodule-kit is populated`
-
-
-
-## `submodule-kit is clean`
-
-Check whether all submodules have no uncommitted changes
-
-**Usage:** `submodule-kit is clean`
-
-
-
-## `submodule-kit is synced`
-
-Check whether each submodule's locally checked-out commit matches what the parent records
-
-**Usage:** `submodule-kit is synced`
-
-
-
-## `submodule-kit is on-branch`
-
-Check whether all submodules are checked out on their configured branch (not detached HEAD)
-
-**Usage:** `submodule-kit is on-branch`
 
 
 

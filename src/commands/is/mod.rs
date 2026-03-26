@@ -1,11 +1,11 @@
 use crate::strings;
-use clap::Subcommand;
+use clap::ValueEnum;
 use std::fs;
 use std::path::Path;
 
 mod conditions;
 
-#[derive(Subcommand)]
+#[derive(ValueEnum, Clone)]
 pub enum IsCondition {
     /// Check whether every submodule's parent-recorded commit matches the tip of its remote branch
     AllUpToDate,
@@ -37,13 +37,19 @@ pub fn list() {
     }
 }
 
-pub fn run(condition: IsCondition) {
-    match condition {
-        IsCondition::AllUpToDate => conditions::all_up_to_date(),
-        IsCondition::Populated => conditions::populated(),
-        IsCondition::Clean => conditions::clean(),
-        IsCondition::Synced => conditions::synced(),
-        IsCondition::OnBranch => conditions::on_branch(),
+pub fn run(conditions: Vec<IsCondition>) {
+    let all_ok = conditions.into_iter().fold(true, |ok, condition| {
+        let passed = match condition {
+            IsCondition::AllUpToDate => conditions::all_up_to_date(),
+            IsCondition::Populated => conditions::populated(),
+            IsCondition::Clean => conditions::clean(),
+            IsCondition::Synced => conditions::synced(),
+            IsCondition::OnBranch => conditions::on_branch(),
+        };
+        ok && passed
+    });
+    if !all_ok {
+        std::process::exit(1);
     }
 }
 

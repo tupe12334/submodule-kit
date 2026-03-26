@@ -3,7 +3,7 @@ use crate::strings;
 use std::path::Path;
 use std::process::exit;
 
-pub fn run() {
+pub fn run() -> bool {
     let submodules = match parse_gitmodules() {
         Ok(s) => s,
         Err(e) => {
@@ -82,7 +82,5 @@ pub fn run() {
         }
     }
 
-    if !all_ok {
-        exit(1);
-    }
+    all_ok
 }
