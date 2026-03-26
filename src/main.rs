@@ -1,4 +1,7 @@
+mod commands;
+
 use clap::{Parser, Subcommand};
+use commands::is::IsCondition;
 
 #[derive(Parser)]
 #[command(
@@ -14,6 +17,11 @@ struct Cli {
 enum Commands {
     /// List all submodules
     List,
+    /// Check a condition about submodules; exits 0 (true) or 1 (false)
+    Is {
+        #[command(subcommand)]
+        condition: IsCondition,
+    },
 }
 
 fn main() {
@@ -22,6 +30,9 @@ fn main() {
     match cli.command {
         Commands::List => {
             println!("Listing submodules...");
+        }
+        Commands::Is { condition } => {
+            commands::is::run(condition);
         }
     }
 }
