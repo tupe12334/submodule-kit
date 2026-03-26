@@ -96,3 +96,7 @@ Check whether all submodules are checked out on their configured branch (not det
     This document was generated automatically by
     <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown</code></a>.
 </i></small>
+
+## License
+
+MIT — see [LICENSE](LICENSE)

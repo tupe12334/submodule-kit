@@ -2,7 +2,12 @@
 name = "submodule-kit"
 version = "0.1.0"
 edition = "2024"
+authors = ["tupe12334 <ofek.gabay.he@gmail.com>"]
+description = "A CLI toolkit for managing git submodules"
+repository = "https://github.com/tupe12334/submodule-kit"
+readme = "README.md"
 license = "MIT"
+license-file = "LICENSE"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

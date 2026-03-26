@@ -38,7 +38,10 @@ fn main() {
             commands::is::run(condition);
         }
         Commands::GenerateDocs => {
-            print!("{}", clap_markdown::help_markdown::<Cli>());
+            print!(
+                "{}\n## License\n\nMIT — see [LICENSE](LICENSE)\n",
+                clap_markdown::help_markdown::<Cli>()
+            );
         }
     }
 }
