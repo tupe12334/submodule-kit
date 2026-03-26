@@ -1,5 +1,3 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
-     Running `target/debug/submodule-kit generate-docs`
 # Command-Line Help for `submodule-kit`
 
 This document contains the help content for the `submodule-kit` command-line program.

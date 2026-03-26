@@ -1,2 +1,10 @@
 cargo fmt --check
 cargo clippy -- -D warnings
+
+# Validate README.md is up-to-date with the CLI definition
+expected=$(cargo run --quiet -- generate-docs 2>/dev/null)
+actual=$(cat README.md 2>/dev/null)
+if [ "$expected" != "$actual" ]; then
+  echo "error: README.md is out of date. Run: cargo run -- generate-docs > README.md"
+  exit 1
+fi
