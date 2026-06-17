@@ -99,6 +99,7 @@ pub fn git_ls_remote(_repo: &git2::Repository, url: &str, branch: &str) -> Resul
         .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
+#[must_use]
 pub fn short(sha: &str) -> &str {
     &sha[..sha.len().min(7)]
 }
