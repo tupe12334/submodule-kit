@@ -24,7 +24,12 @@ pub(crate) fn check(submodules: &[SubmoduleInfo], repo: &git2::Repository) -> Re
     let mut all_ok = true;
 
     for sub in submodules {
-        let branch = sub.branch.as_deref().unwrap();
+        // The loop above guarantees `branch` is `Some`, but propagate an error
+        // instead of unwrapping so a future change can never turn this into a panic.
+        let branch = sub
+            .branch
+            .as_deref()
+            .ok_or_else(|| strings::err_missing_branch(&sub.path))?;
 
         let parent_sha = git_rev_parse_submodule(repo, &sub.path)?;
         let remote_sha = git_ls_remote(repo, &sub.url, branch)?;
