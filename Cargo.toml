@@ -16,6 +16,10 @@ redundant_closure_for_method_calls = "deny"
 # Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
 # as a handled, user-facing error rather than crashing the CLI with an opaque panic.
 unwrap_used = "deny"
+# Require a trailing semicolon on the final statement of a block that returns `()`,
+# so a unit-returning statement reads as a statement instead of an accidental tail
+# expression. Keeps block endings consistent and makes a later non-`()` change visible.
+semicolon_if_nothing_returned = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
