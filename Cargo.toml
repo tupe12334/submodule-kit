@@ -16,6 +16,9 @@ redundant_closure_for_method_calls = "deny"
 # Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
 # as a handled, user-facing error rather than crashing the CLI with an opaque panic.
 unwrap_used = "deny"
+# Forbid `.expect()` for the same reason: it only adds a static message and still
+# panics on `None`/`Err`, reintroducing the behavior `unwrap_used` prevents.
+expect_used = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
