@@ -8,6 +8,12 @@ pub struct SubmoduleInfo {
     pub branch: Option<String>,
 }
 
+/// Parse the contents of a `.gitmodules` file into a list of submodules.
+///
+/// # Errors
+///
+/// Returns an error if a `[submodule "..."]` section is missing its required
+/// `path` or `url` key.
 pub fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, String> {
     let mut submodules: Vec<SubmoduleInfo> = Vec::new();
     let mut current_name: Option<String> = None;
@@ -66,12 +72,24 @@ pub fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, String>
     Ok(submodules)
 }
 
+/// Read and parse the repository's `.gitmodules` file.
+///
+/// # Errors
+///
+/// Returns an error if the `.gitmodules` file cannot be read, or if its
+/// contents fail to parse (see [`parse_gitmodules_str`]).
 pub fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
     let content = std::fs::read_to_string(strings::GITMODULES_FILE)
         .map_err(|e| strings::err_read_gitmodules(&e))?;
     parse_gitmodules_str(&content)
 }
 
+/// Resolve the commit id the parent repository's index records for `path`.
+///
+/// # Errors
+///
+/// Returns an error if the repository index cannot be opened, or if `path` has
+/// no entry in the index.
 pub fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<String, String> {
     let index = repo.index().map_err(|e| strings::err_open_index(&e))?;
     let entry = index
@@ -80,6 +98,13 @@ pub fn git_rev_parse_submodule(repo: &git2::Repository, path: &str) -> Result<St
     Ok(entry.id.to_string())
 }
 
+/// Look up the remote commit id for `branch` at `url` via `git ls-remote`.
+///
+/// # Errors
+///
+/// Returns an error if the `git` process cannot be spawned, exits unsuccessfully
+/// (for example, the remote is unreachable), or the requested branch ref is not
+/// present on the remote.
 pub fn git_ls_remote(_repo: &git2::Repository, url: &str, branch: &str) -> Result<String, String> {
     let refspec = format!("{}{branch}", strings::REFS_HEADS_PREFIX);
     let output = std::process::Command::new("git")
