@@ -12,6 +12,9 @@ categories = ["command-line-utilities", "development-tools"]
 
 [lints.clippy]
 all = "deny"
+# Prefer `map_or`/`map_or_else` over `map(...).unwrap_or(...)`/`map(...).unwrap_or_else(...)`.
+# Clearer intent and avoids building an intermediate Option/Result only to unwrap it.
+map_unwrap_or = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
