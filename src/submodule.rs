@@ -95,7 +95,7 @@ pub fn git_ls_remote(_repo: &git2::Repository, url: &str, branch: &str) -> Resul
         .lines()
         .find(|line| line.ends_with(&refspec))
         .and_then(|line| line.split_whitespace().next())
-        .map(|sha| sha.to_string())
+        .map(ToString::to_string)
         .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
