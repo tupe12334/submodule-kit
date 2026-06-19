@@ -16,6 +16,12 @@ pub enum IsCondition {
     OnBranch,
 }
 
+/// Evaluate each requested condition and report whether they all hold.
+///
+/// # Errors
+///
+/// Returns an error if any individual condition check fails (for example, when
+/// git state cannot be inspected).
 pub fn run(conditions: Vec<IsCondition>) -> Result<bool, String> {
     let mut all_ok = true;
     for condition in conditions {
