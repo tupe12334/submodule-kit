@@ -35,6 +35,12 @@ expect_used = "deny"
 # `Result`. Recoverable failures should propagate as errors so the user gets a
 # clear message and a non-zero exit code.
 panic = "deny"
+# Require doc comments to wrap code-like items (type names, function names,
+# paths, URLs) in backticks. Unbackticked identifiers render as prose in
+# rustdoc/docs.rs and can be silently mangled (e.g. `Vec<T>` losing its
+# generics), so this keeps the crate's public documentation accurate and
+# readable. Complements `missing_errors_doc` in raising overall doc quality.
+doc_markdown = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
