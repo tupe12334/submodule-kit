@@ -23,6 +23,9 @@ missing_errors_doc = "deny"
 # Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
 # as a handled, user-facing error rather than crashing the CLI with an opaque panic.
 unwrap_used = "deny"
+# Forbid `.expect()` for the same reason: it only adds a static message and still
+# panics on `None`/`Err`, reintroducing the behavior `unwrap_used` prevents.
+expect_used = "deny"
 # Forbid explicit `panic!` in production code. Like `unwrap_used`, a panic aborts
 # the CLI with an opaque message and backtrace instead of returning a handled
 # `Result`. Recoverable failures should propagate as errors so the user gets a
