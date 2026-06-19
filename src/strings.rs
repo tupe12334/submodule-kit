@@ -42,14 +42,17 @@ pub fn err_read_gitmodules(e: &impl std::fmt::Display) -> String {
     format!("Failed to read .gitmodules: {e}")
 }
 
+#[must_use]
 pub fn err_missing_path(name: &str) -> String {
     format!("submodule '{name}' is missing 'path =' in .gitmodules")
 }
 
+#[must_use]
 pub fn err_missing_url(name: &str) -> String {
     format!("submodule '{name}' is missing 'url =' in .gitmodules")
 }
 
+#[must_use]
 pub fn err_missing_branch(path: &str) -> String {
     format!("submodule '{path}' is missing 'branch =' in .gitmodules")
 }
@@ -58,6 +61,7 @@ pub fn err_open_index(e: &impl std::fmt::Display) -> String {
     format!("failed to open index: {e}")
 }
 
+#[must_use]
 pub fn err_not_in_index(path: &str) -> String {
     format!("submodule '{path}' not found in index")
 }
@@ -74,6 +78,7 @@ pub fn err_list_refs(url: &str, e: &impl std::fmt::Display) -> String {
     format!("failed to list refs at {url}: {e}")
 }
 
+#[must_use]
 pub fn err_ref_not_found(refspec: &str, url: &str) -> String {
     format!("ref {refspec} not found at {url}")
 }
