@@ -13,6 +13,7 @@ categories = ["command-line-utilities", "development-tools"]
 [lints.clippy]
 all = "deny"
 redundant_closure_for_method_calls = "deny"
+uninlined_format_args = "deny"
 # Require a `# Errors` documentation section on every public function that
 # returns `Result`, spelling out the conditions under which it fails. Callers of
 # this crate's library API should learn the failure modes from the docs rather
