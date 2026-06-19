@@ -10,7 +10,7 @@ pub fn run() -> Result<bool, String> {
     check(&submodules, Path::new("."))
 }
 
-pub(crate) fn check(submodules: &[SubmoduleInfo], base_path: &Path) -> Result<bool, String> {
+pub fn check(submodules: &[SubmoduleInfo], base_path: &Path) -> Result<bool, String> {
     let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
     let mut all_ok = true;
 

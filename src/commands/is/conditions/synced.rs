@@ -11,7 +11,7 @@ pub fn run() -> Result<bool, String> {
     check(&submodules, &repo, Path::new("."))
 }
 
-pub(crate) fn check(
+pub fn check(
     submodules: &[SubmoduleInfo],
     repo: &git2::Repository,
     base_path: &Path,

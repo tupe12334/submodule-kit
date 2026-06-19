@@ -26,6 +26,11 @@ unwrap_used = "deny"
 # `Result`. Recoverable failures should propagate as errors so the user gets a
 # clear message and a non-zero exit code.
 panic = "deny"
+# Flag `pub(crate)` items declared inside a private module: the module is already
+# unreachable from outside the crate, so the `(crate)` restriction adds nothing.
+# A plain `pub` expresses the same effective visibility with less noise and keeps
+# visibility modifiers honest and easy to scan.
+redundant_pub_crate = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

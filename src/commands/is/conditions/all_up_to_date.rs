@@ -12,7 +12,7 @@ pub fn run() -> Result<bool, String> {
     check(&submodules, &repo)
 }
 
-pub(crate) fn check(submodules: &[SubmoduleInfo], repo: &git2::Repository) -> Result<bool, String> {
+pub fn check(submodules: &[SubmoduleInfo], repo: &git2::Repository) -> Result<bool, String> {
     // Validate branch is present for every submodule upfront.
     for sub in submodules {
         if sub.branch.is_none() {
