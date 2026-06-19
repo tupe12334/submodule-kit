@@ -41,6 +41,13 @@ panic = "deny"
 # generics), so this keeps the crate's public documentation accurate and
 # readable. Complements `missing_errors_doc` in raising overall doc quality.
 doc_markdown = "deny"
+# Forbid `.to_string()` on values that are already `&str`. `ToString::to_string`
+# routes through the `Display` formatting machinery, whereas `str::to_owned`
+# allocates the `String` directly. Beyond the minor efficiency gain, spelling the
+# conversion as `.to_owned()` states the intent ("clone this borrowed str into an
+# owned String") unambiguously and keeps `&str -> String` conversions consistent
+# across the crate.
+str_to_string = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

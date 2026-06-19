@@ -48,14 +48,14 @@ pub fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, String>
             current_name = Some(
                 line.trim_start_matches(strings::SUBMODULE_SECTION_PREFIX)
                     .trim_end_matches(strings::SUBMODULE_SECTION_SUFFIX)
-                    .to_string(),
+                    .to_owned(),
             );
         } else if let Some(v) = line.strip_prefix(strings::KEY_PATH) {
-            current_path = Some(v.trim().to_string());
+            current_path = Some(v.trim().to_owned());
         } else if let Some(v) = line.strip_prefix(strings::KEY_URL) {
-            current_url = Some(v.trim().to_string());
+            current_url = Some(v.trim().to_owned());
         } else if let Some(v) = line.strip_prefix(strings::KEY_BRANCH) {
-            current_branch = Some(v.trim().to_string());
+            current_branch = Some(v.trim().to_owned());
         }
     }
 
@@ -120,7 +120,7 @@ pub fn git_ls_remote(_repo: &git2::Repository, url: &str, branch: &str) -> Resul
         .lines()
         .find(|line| line.ends_with(&refspec))
         .and_then(|line| line.split_whitespace().next())
-        .map(ToString::to_string)
+        .map(str::to_owned)
         .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
