@@ -41,6 +41,12 @@ panic = "deny"
 # generics), so this keeps the crate's public documentation accurate and
 # readable. Complements `missing_errors_doc` in raising overall doc quality.
 doc_markdown = "deny"
+# Prefer the `let ... else { ... }` form over a `match`/`if let` whose only job is
+# to bind a value in the success arm and diverge (return/break/panic) otherwise.
+# The let-else form keeps the bound variable in the outer scope without an extra
+# indentation level, so the happy path reads top-to-bottom and the divergent
+# branch is visibly an early exit. Reduces nesting and makes control flow clearer.
+manual_let_else = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
