@@ -13,6 +13,11 @@ categories = ["command-line-utilities", "development-tools"]
 [lints.clippy]
 all = "deny"
 redundant_closure_for_method_calls = "deny"
+# Require a `# Errors` documentation section on every public function that
+# returns `Result`, spelling out the conditions under which it fails. Callers of
+# this crate's library API should learn the failure modes from the docs rather
+# than reverse-engineering them from the source or hitting them at runtime.
+missing_errors_doc = "deny"
 # Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
 # as a handled, user-facing error rather than crashing the CLI with an opaque panic.
 unwrap_used = "deny"
@@ -20,6 +25,11 @@ unwrap_used = "deny"
 # so a unit-returning statement reads as a statement instead of an accidental tail
 # expression. Keeps block endings consistent and makes a later non-`()` change visible.
 semicolon_if_nothing_returned = "deny"
+# Forbid explicit `panic!` in production code. Like `unwrap_used`, a panic aborts
+# the CLI with an opaque message and backtrace instead of returning a handled
+# `Result`. Recoverable failures should propagate as errors so the user gets a
+# clear message and a non-zero exit code.
+panic = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
