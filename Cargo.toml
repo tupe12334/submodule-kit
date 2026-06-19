@@ -16,6 +16,11 @@ redundant_closure_for_method_calls = "deny"
 # Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
 # as a handled, user-facing error rather than crashing the CLI with an opaque panic.
 unwrap_used = "deny"
+# Forbid explicit `panic!` in production code. Like `unwrap_used`, a panic aborts
+# the CLI with an opaque message and backtrace instead of returning a handled
+# `Result`. Recoverable failures should propagate as errors so the user gets a
+# clear message and a non-zero exit code.
+panic = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
