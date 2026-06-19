@@ -15,6 +15,9 @@ all = "deny"
 redundant_closure_for_method_calls = "deny"
 # Require `#[must_use]` on pure functions whose return value should not be dropped
 must_use_candidate = "deny"
+# Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
+# as a handled, user-facing error rather than crashing the CLI with an opaque panic.
+unwrap_used = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
