@@ -41,6 +41,12 @@ panic = "deny"
 # generics), so this keeps the crate's public documentation accurate and
 # readable. Complements `missing_errors_doc` in raising overall doc quality.
 doc_markdown = "deny"
+# Use `.copied()` instead of `.cloned()` on iterators of `Copy` types. Both
+# produce identical results, but `.cloned()` invokes the `Clone` machinery while
+# `.copied()` documents that the element is a trivial bitwise copy. It reads more
+# precisely and guards against a later type change silently turning a cheap copy
+# into an expensive `Clone`.
+cloned_instead_of_copied = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
