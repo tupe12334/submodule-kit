@@ -64,3 +64,7 @@ Check one or more conditions about submodules; exits 0 (all true) or 1 (any fals
 ## License
 
 MIT — see [LICENSE](LICENSE)
+
+## Related projects
+
+- [moadim](https://moadim.io/) — loop engineering: build, schedule & run agent loops.
