@@ -13,6 +13,11 @@ categories = ["command-line-utilities", "development-tools"]
 [lints.clippy]
 all = "deny"
 redundant_closure_for_method_calls = "deny"
+# Require a `# Errors` documentation section on every public function that
+# returns `Result`, spelling out the conditions under which it fails. Callers of
+# this crate's library API should learn the failure modes from the docs rather
+# than reverse-engineering them from the source or hitting them at runtime.
+missing_errors_doc = "deny"
 # Forbid `.unwrap()` in production code: an unexpected `None`/`Err` should surface
 # as a handled, user-facing error rather than crashing the CLI with an opaque panic.
 unwrap_used = "deny"
