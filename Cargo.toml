@@ -35,6 +35,12 @@ expect_used = "deny"
 # `Result`. Recoverable failures should propagate as errors so the user gets a
 # clear message and a non-zero exit code.
 panic = "deny"
+# Forbid direct slice/array indexing (`xs[i]`, `xs[a..b]`) in production code.
+# An out-of-bounds index panics with an opaque message, the exact failure mode
+# `unwrap_used`, `expect_used` and `panic` already forbid. This pushes the code
+# toward `.get(i)` / `.get(a..b)`, which return `Option` and force the
+# out-of-bounds case to be handled and surfaced as a recoverable error.
+indexing_slicing = "deny"
 # Require doc comments to wrap code-like items (type names, function names,
 # paths, URLs) in backticks. Unbackticked identifiers render as prose in
 # rustdoc/docs.rs and can be silently mangled (e.g. `Vec<T>` losing its
@@ -50,6 +56,12 @@ doc_markdown = "deny"
 # this rule carries zero current cost and simply keeps the library's API taking
 # only the ownership it genuinely needs as it grows.
 needless_pass_by_value = "deny"
+# Use `.copied()` instead of `.cloned()` on iterators of `Copy` types. Both
+# produce identical results, but `.cloned()` invokes the `Clone` machinery while
+# `.copied()` documents that the element is a trivial bitwise copy. It reads more
+# precisely and guards against a later type change silently turning a cheap copy
+# into an expensive `Clone`.
+cloned_instead_of_copied = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
