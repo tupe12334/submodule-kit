@@ -61,9 +61,9 @@ pub(crate) fn check(submodules: &[SubmoduleInfo], base_path: &Path) -> Result<bo
                 .peel_to_commit()
                 .map(|c| {
                     let full = c.id().to_string();
-                    short(&full).to_string()
+                    short(&full).to_owned()
                 })
-                .unwrap_or_else(|_| strings::LABEL_UNKNOWN.to_string());
+                .unwrap_or_else(|_| strings::LABEL_UNKNOWN.to_owned());
             println!(
                 "{:<col_width$}  {}  {}",
                 sub.path,
