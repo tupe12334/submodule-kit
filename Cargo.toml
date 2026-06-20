@@ -64,6 +64,13 @@ cloned_instead_of_copied = "deny"
 # `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
 # and only construct the default on the `None`/`Err` path.
 map_unwrap_or = "deny"
+# Inline simple variables directly into format strings (`println!("{name}")`)
+# instead of passing them as trailing positional/named args (`println!("{}", name)`).
+# The crate targets `edition = "2024"`, where inline format captures are idiomatic;
+# this keeps every `format!`/`println!`/`write!` call site uniform, puts each value
+# next to where it is rendered, and removes argument-order mistakes in multi-arg
+# format strings. The codebase has zero violations, so this is a forward-looking guard.
+uninlined_format_args = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
