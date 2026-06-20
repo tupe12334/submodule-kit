@@ -53,6 +53,12 @@ doc_markdown = "deny"
 # precisely and guards against a later type change silently turning a cheap copy
 # into an expensive `Clone`.
 cloned_instead_of_copied = "deny"
+# Forbid `.map(f).unwrap_or(d)` / `.map(f).unwrap_or_else(g)` chains on
+# `Option`/`Result`. They read as two steps and, with `unwrap_or`, build the
+# default value on every call even when it isn't used. The single-call
+# `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
+# and only construct the default on the `None`/`Err` path.
+map_unwrap_or = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
