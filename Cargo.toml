@@ -58,6 +58,13 @@ use_self = "deny"
 # precisely and guards against a later type change silently turning a cheap copy
 # into an expensive `Clone`.
 cloned_instead_of_copied = "deny"
+# Forbid `todo!()` in production code. The macro expands to a panic, so a
+# placeholder left in a shipped path aborts the CLI with an opaque message at the
+# moment a user exercises it. This closes a gap left by `panic`, `unwrap_used`,
+# `expect_used` and `indexing_slicing`, which already forbid the other ways code
+# can panic instead of returning a handled `Result`: unfinished work must surface
+# at compile time, not as a runtime crash for the user.
+todo = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
