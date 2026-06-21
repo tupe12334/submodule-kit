@@ -71,6 +71,14 @@ map_unwrap_or = "deny"
 # next to where it is rendered, and removes argument-order mistakes in multi-arg
 # format strings. The codebase has zero violations, so this is a forward-looking guard.
 uninlined_format_args = "deny"
+# Prefer `for x in &collection` / `for x in &mut collection` over the explicit
+# `for x in collection.iter()` / `.iter_mut()`. The implicit-borrow form is the
+# idiomatic Rust loop: it is shorter, reads as "iterate the collection" without
+# the `.iter()` ceremony, and makes the borrow (`&` vs `&mut` vs by-value) the
+# single visible signal of how the loop consumes its input. No current
+# violations exist, so `deny` locks in the clean state and prevents future
+# regressions.
+explicit_iter_loop = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
