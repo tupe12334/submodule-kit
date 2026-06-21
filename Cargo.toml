@@ -64,6 +64,12 @@ cloned_instead_of_copied = "deny"
 # `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
 # and only construct the default on the `None`/`Err` path.
 map_unwrap_or = "deny"
+# Require item definitions (`fn`, `const`, `struct`, nested `use`, etc.) to come
+# before the statements of an enclosing block rather than being interleaved
+# between them. A reader scanning a function body expects executable steps, not a
+# helper definition buried mid-flow; hoisting items to the top keeps the
+# statement sequence linear and makes the block's local helpers easy to find.
+items_after_statements = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
