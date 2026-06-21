@@ -13,6 +13,13 @@ categories = ["command-line-utilities", "development-tools"]
 [lints.clippy]
 all = "deny"
 redundant_closure_for_method_calls = "deny"
+# Prefer a positive `if` condition over `if !cond { .. } else { .. }`. When an
+# `else` branch exists, a negated condition makes the reader mentally invert it
+# to follow the primary case and the `else` then re-inverts it. Leading with the
+# affirmative condition puts the happy path in the first branch and removes the
+# double negative. No current violations exist, so `deny` locks in the clean
+# state and prevents future negated-`if`/`else` from creeping in.
+if_not_else = "deny"
 # Require `#[must_use]` on pure functions whose return value should not be dropped
 must_use_candidate = "deny"
 # Require a `# Errors` documentation section on every public function that
@@ -71,6 +78,14 @@ map_unwrap_or = "deny"
 # the shared behavior once and makes "these variants are handled the same way"
 # explicit rather than incidental.
 match_same_arms = "deny"
+# Prefer `for x in &collection` / `for x in &mut collection` over the explicit
+# `for x in collection.iter()` / `.iter_mut()`. The implicit-borrow form is the
+# idiomatic Rust loop: it is shorter, reads as "iterate the collection" without
+# the `.iter()` ceremony, and makes the borrow (`&` vs `&mut` vs by-value) the
+# single visible signal of how the loop consumes its input. No current
+# violations exist, so `deny` locks in the clean state and prevents future
+# regressions.
+explicit_iter_loop = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
