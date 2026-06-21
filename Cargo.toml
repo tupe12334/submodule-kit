@@ -64,6 +64,14 @@ cloned_instead_of_copied = "deny"
 # `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
 # and only construct the default on the `None`/`Err` path.
 map_unwrap_or = "deny"
+# Prefer `for x in &collection` / `for x in &mut collection` over the explicit
+# `for x in collection.iter()` / `.iter_mut()`. The implicit-borrow form is the
+# idiomatic Rust loop: it is shorter, reads as "iterate the collection" without
+# the `.iter()` ceremony, and makes the borrow (`&` vs `&mut` vs by-value) the
+# single visible signal of how the loop consumes its input. No current
+# violations exist, so `deny` locks in the clean state and prevents future
+# regressions.
+explicit_iter_loop = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
