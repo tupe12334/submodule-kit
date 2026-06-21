@@ -72,6 +72,13 @@ map_unwrap_or = "deny"
 # violations exist, so `deny` locks in the clean state and prevents future
 # regressions.
 explicit_iter_loop = "deny"
+# Forbid `if !cond { .. } else { .. }` — an `if` whose condition is a negation
+# while an `else` branch also exists. The negated form makes the reader mentally
+# invert the condition to follow the happy path, and the `else` then re-inverts
+# it; leading with the positive condition puts the primary case in the first
+# branch and drops the double negative. No current violations exist, so `deny`
+# locks in the clean state and blocks future negated-`if`/`else` from creeping in.
+if_not_else = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
