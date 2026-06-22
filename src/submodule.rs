@@ -8,80 +8,29 @@ pub struct SubmoduleInfo {
     pub branch: Option<String>,
 }
 
-/// Parse the contents of a `.gitmodules` file into a list of submodules.
+/// List the repository's configured submodules via libgit2.
+///
+/// This delegates to libgit2's `Repository::submodules`, which parses
+/// `.gitmodules` with the real git-config grammar (combined with the
+/// repository config) instead of a hand-rolled string scan. As a result it
+/// correctly handles whitespace around `=`, case-insensitive key names,
+/// comment lines and quoted values that the previous parser mishandled.
 ///
 /// # Errors
 ///
-/// Returns an error if a `[submodule "..."]` section is missing its required
-/// `path` or `url` key.
-pub fn parse_gitmodules_str(content: &str) -> Result<Vec<SubmoduleInfo>, String> {
-    let mut submodules: Vec<SubmoduleInfo> = Vec::new();
-    let mut current_name: Option<String> = None;
-    let mut current_path: Option<String> = None;
-    let mut current_url: Option<String> = None;
-    let mut current_branch: Option<String> = None;
-
-    let flush = |name: String,
-                 path: Option<String>,
-                 url: Option<String>,
-                 branch: Option<String>,
-                 out: &mut Vec<SubmoduleInfo>|
-     -> Result<(), String> {
-        let path = path.ok_or_else(|| strings::err_missing_path(&name))?;
-        let url = url.ok_or_else(|| strings::err_missing_url(&name))?;
-        out.push(SubmoduleInfo { path, url, branch });
-        Ok(())
-    };
-
-    for line in content.lines() {
-        let line = line.trim();
-        if line.starts_with(strings::SUBMODULE_SECTION_CHECK) && line.ends_with(']') {
-            if let Some(name) = current_name.take() {
-                flush(
-                    name,
-                    current_path.take(),
-                    current_url.take(),
-                    current_branch.take(),
-                    &mut submodules,
-                )?;
-            }
-            current_name = Some(
-                line.trim_start_matches(strings::SUBMODULE_SECTION_PREFIX)
-                    .trim_end_matches(strings::SUBMODULE_SECTION_SUFFIX)
-                    .to_string(),
-            );
-        } else if let Some(v) = line.strip_prefix(strings::KEY_PATH) {
-            current_path = Some(v.trim().to_string());
-        } else if let Some(v) = line.strip_prefix(strings::KEY_URL) {
-            current_url = Some(v.trim().to_string());
-        } else if let Some(v) = line.strip_prefix(strings::KEY_BRANCH) {
-            current_branch = Some(v.trim().to_string());
-        }
-    }
-
-    if let Some(name) = current_name.take() {
-        flush(
-            name,
-            current_path.take(),
-            current_url.take(),
-            current_branch.take(),
-            &mut submodules,
-        )?;
-    }
-
-    Ok(submodules)
-}
-
-/// Read and parse the repository's `.gitmodules` file.
-///
-/// # Errors
-///
-/// Returns an error if the `.gitmodules` file cannot be read, or if its
-/// contents fail to parse (see [`parse_gitmodules_str`]).
-pub fn parse_gitmodules() -> Result<Vec<SubmoduleInfo>, String> {
-    let content = std::fs::read_to_string(strings::GITMODULES_FILE)
-        .map_err(|e| strings::err_read_gitmodules(&e))?;
-    parse_gitmodules_str(&content)
+/// Returns an error if libgit2 cannot read the repository's submodule list.
+pub fn submodules(repo: &git2::Repository) -> Result<Vec<SubmoduleInfo>, String> {
+    let entries = repo
+        .submodules()
+        .map_err(|e| strings::err_read_submodules(&e))?;
+    Ok(entries
+        .iter()
+        .map(|sm| SubmoduleInfo {
+            path: sm.path().to_string_lossy().into_owned(),
+            url: sm.url().unwrap_or_default().to_string(),
+            branch: sm.branch().map(ToString::to_string),
+        })
+        .collect())
 }
 
 /// Resolve the commit id the parent repository's index records for `path`.
@@ -124,6 +73,7 @@ pub fn git_ls_remote(_repo: &git2::Repository, url: &str, branch: &str) -> Resul
         .ok_or_else(|| strings::err_ref_not_found(&refspec, url))
 }
 
+#[must_use]
 pub fn short(sha: &str) -> &str {
     &sha[..sha.len().min(7)]
 }
