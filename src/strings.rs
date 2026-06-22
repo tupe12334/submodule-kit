@@ -3,14 +3,6 @@
 // ── file paths ────────────────────────────────────────────────────────────────
 pub const GITMODULES_FILE: &str = ".gitmodules";
 
-// ── .gitmodules parsing tokens ────────────────────────────────────────────────
-pub const SUBMODULE_SECTION_CHECK: &str = "[submodule ";
-pub const SUBMODULE_SECTION_PREFIX: &str = "[submodule \"";
-pub const SUBMODULE_SECTION_SUFFIX: &str = "\"]";
-pub const KEY_PATH: &str = "path = ";
-pub const KEY_URL: &str = "url = ";
-pub const KEY_BRANCH: &str = "branch = ";
-
 // ── git refs ──────────────────────────────────────────────────────────────────
 pub const REFS_HEADS_PREFIX: &str = "refs/heads/";
 
@@ -85,6 +77,10 @@ pub fn err_ref_not_found(refspec: &str, url: &str) -> String {
 
 pub fn err_open_repo(e: &impl std::fmt::Display) -> String {
     format!("failed to open git repository: {e}")
+}
+
+pub fn err_read_submodules(e: &impl std::fmt::Display) -> String {
+    format!("failed to read submodules: {e}")
 }
 
 pub fn err_open_submodule(path: &str, e: &impl std::fmt::Display) -> String {

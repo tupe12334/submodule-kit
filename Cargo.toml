@@ -78,6 +78,13 @@ map_unwrap_or = "deny"
 # the shared behavior once and makes "these variants are handled the same way"
 # explicit rather than incidental.
 match_same_arms = "deny"
+# Inline simple variables directly into format strings (`println!("{name}")`)
+# instead of passing them as trailing positional/named args (`println!("{}", name)`).
+# The crate targets `edition = "2024"`, where inline format captures are idiomatic;
+# this keeps every `format!`/`println!`/`write!` call site uniform, puts each value
+# next to where it is rendered, and removes argument-order mistakes in multi-arg
+# format strings. The codebase has zero violations, so this is a forward-looking guard.
+uninlined_format_args = "deny"
 # Prefer `for x in &collection` / `for x in &mut collection` over the explicit
 # `for x in collection.iter()` / `.iter_mut()`. The implicit-borrow form is the
 # idiomatic Rust loop: it is shorter, reads as "iterate the collection" without
