@@ -71,6 +71,13 @@ cloned_instead_of_copied = "deny"
 # `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
 # and only construct the default on the `None`/`Err` path.
 map_unwrap_or = "deny"
+# Forbid an `else` block that follows an `if` branch which always diverges
+# (`return`, `break`, `continue`, or a never-returning call). In that case the
+# `else` is redundant: the code after the `if` only runs when the condition was
+# false, so the `else` body can be de-indented. Dropping it flattens control
+# flow and reinforces the early-return / guard-clause style that pairs with the
+# crate's `unwrap_used`/`expect_used`/`panic`/`indexing_slicing` lints.
+redundant_else = "deny"
 # Inline simple variables directly into format strings (`println!("{name}")`)
 # instead of passing them as trailing positional/named args (`println!("{}", name)`).
 # The crate targets `edition = "2024"`, where inline format captures are idiomatic;
