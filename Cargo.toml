@@ -71,6 +71,13 @@ cloned_instead_of_copied = "deny"
 # `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
 # and only construct the default on the `None`/`Err` path.
 map_unwrap_or = "deny"
+# Flag two or more `match` arms whose bodies are identical but written as
+# separate arms instead of being combined with an or-pattern (`A | B => ...`).
+# Duplicated arm bodies are a copy-paste smell and a maintenance hazard: a later
+# change can update one arm and silently forget the other. Merging them states
+# the shared behavior once and makes "these variants are handled the same way"
+# explicit rather than incidental.
+match_same_arms = "deny"
 # Inline simple variables directly into format strings (`println!("{name}")`)
 # instead of passing them as trailing positional/named args (`println!("{}", name)`).
 # The crate targets `edition = "2024"`, where inline format captures are idiomatic;
