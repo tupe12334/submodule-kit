@@ -54,6 +54,15 @@ indexing_slicing = "deny"
 # generics), so this keeps the crate's public documentation accurate and
 # readable. Complements `missing_errors_doc` in raising overall doc quality.
 doc_markdown = "deny"
+# Forbid taking an argument by value (`String`, `Vec<T>`, a struct) when the
+# function only reads it and never needs ownership. Passing by value forces the
+# caller to either give up its own copy or `.clone()` at the call site — an
+# avoidable allocation — and hides from the signature whether the value is
+# actually consumed. Borrowing (`&str`, `&[T]`, `&T`) makes the contract honest
+# and lets callers keep their data. There are no violations in `src` today, so
+# this rule carries zero current cost and simply keeps the library's API taking
+# only the ownership it genuinely needs as it grows.
+needless_pass_by_value = "deny"
 # Require the `Self` keyword instead of repeating the concrete type name inside an
 # `impl` block. Using `Self` keeps the implementation tied to the type it belongs to,
 # so renaming the type touches one line instead of many, and removes ambiguity about
