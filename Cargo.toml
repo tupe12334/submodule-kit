@@ -13,6 +13,13 @@ categories = ["command-line-utilities", "development-tools"]
 [lints.clippy]
 all = "deny"
 redundant_closure_for_method_calls = "deny"
+# Prefer a positive `if` condition over `if !cond { .. } else { .. }`. When an
+# `else` branch exists, a negated condition makes the reader mentally invert it
+# to follow the primary case and the `else` then re-inverts it. Leading with the
+# affirmative condition puts the happy path in the first branch and removes the
+# double negative. No current violations exist, so `deny` locks in the clean
+# state and prevents future negated-`if`/`else` from creeping in.
+if_not_else = "deny"
 # Require `#[must_use]` on pure functions whose return value should not be dropped
 must_use_candidate = "deny"
 # Require a `# Errors` documentation section on every public function that
@@ -53,12 +60,38 @@ doc_markdown = "deny"
 # indentation level, so the happy path reads top-to-bottom and the divergent
 # branch is visibly an early exit. Reduces nesting and makes control flow clearer.
 manual_let_else = "deny"
+# Require the `Self` keyword instead of repeating the concrete type name inside an
+# `impl` block. Using `Self` keeps the implementation tied to the type it belongs to,
+# so renaming the type touches one line instead of many, and removes ambiguity about
+# whether a referenced name is the current type or a different one.
+use_self = "deny"
 # Use `.copied()` instead of `.cloned()` on iterators of `Copy` types. Both
 # produce identical results, but `.cloned()` invokes the `Clone` machinery while
 # `.copied()` documents that the element is a trivial bitwise copy. It reads more
 # precisely and guards against a later type change silently turning a cheap copy
 # into an expensive `Clone`.
 cloned_instead_of_copied = "deny"
+# Forbid `.map(f).unwrap_or(d)` / `.map(f).unwrap_or_else(g)` chains on
+# `Option`/`Result`. They read as two steps and, with `unwrap_or`, build the
+# default value on every call even when it isn't used. The single-call
+# `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
+# and only construct the default on the `None`/`Err` path.
+map_unwrap_or = "deny"
+# Inline simple variables directly into format strings (`println!("{name}")`)
+# instead of passing them as trailing positional/named args (`println!("{}", name)`).
+# The crate targets `edition = "2024"`, where inline format captures are idiomatic;
+# this keeps every `format!`/`println!`/`write!` call site uniform, puts each value
+# next to where it is rendered, and removes argument-order mistakes in multi-arg
+# format strings. The codebase has zero violations, so this is a forward-looking guard.
+uninlined_format_args = "deny"
+# Prefer `for x in &collection` / `for x in &mut collection` over the explicit
+# `for x in collection.iter()` / `.iter_mut()`. The implicit-borrow form is the
+# idiomatic Rust loop: it is shorter, reads as "iterate the collection" without
+# the `.iter()` ceremony, and makes the borrow (`&` vs `&mut` vs by-value) the
+# single visible signal of how the loop consumes its input. No current
+# violations exist, so `deny` locks in the clean state and prevents future
+# regressions.
+explicit_iter_loop = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

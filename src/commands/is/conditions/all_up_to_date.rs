@@ -1,14 +1,9 @@
 use crate::strings;
-use crate::submodule::{
-    SubmoduleInfo, git_ls_remote, git_rev_parse_submodule, parse_gitmodules_str, short,
-};
-use std::fs;
+use crate::submodule::{SubmoduleInfo, git_ls_remote, git_rev_parse_submodule, short, submodules};
 
 pub fn run() -> Result<bool, String> {
-    let content = fs::read_to_string(strings::GITMODULES_FILE)
-        .map_err(|e| strings::err_read_gitmodules(&e))?;
-    let submodules = parse_gitmodules_str(&content)?;
     let repo = git2::Repository::open(".").map_err(|e| strings::err_open_repo(&e))?;
+    let submodules = submodules(&repo)?;
     check(&submodules, &repo)
 }
 
