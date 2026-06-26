@@ -113,6 +113,14 @@ uninlined_format_args = "deny"
 # violations exist, so `deny` locks in the clean state and prevents future
 # regressions.
 explicit_iter_loop = "deny"
+# Forbid `unimplemented!()` in production code. Like `todo!()` and `panic!()`,
+# it expands to a panic at runtime rather than surfacing a compile-time error or
+# a handled `Result`. Shipping an `unimplemented!()` call means a user can hit a
+# code path and receive an opaque crash instead of a clear error message. Since
+# the crate already bans `todo`, `panic`, `unwrap_used`, `expect_used`, and
+# `indexing_slicing`, adding `unimplemented` closes the remaining gap and makes
+# the no-runtime-panic contract enforced by the full set of lints complete.
+unimplemented = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
