@@ -113,6 +113,11 @@ uninlined_format_args = "deny"
 # violations exist, so `deny` locks in the clean state and prevents future
 # regressions.
 explicit_iter_loop = "deny"
+# Forbid `dbg!(...)` macros in committed code. The macro writes to `stderr` and is
+# a debugging aid, not a user-facing output primitive. A stray `dbg!` call reaches
+# every user running the CLI and pollutes its structured output. The codebase has no
+# `dbg!` calls today, so `deny` acts as a zero-cost regression guard.
+dbg_macro = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
