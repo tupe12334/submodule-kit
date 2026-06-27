@@ -121,6 +121,16 @@ explicit_iter_loop = "deny"
 # `indexing_slicing`, adding `unimplemented` closes the remaining gap and makes
 # the no-runtime-panic contract enforced by the full set of lints complete.
 unimplemented = "deny"
+# Require every `#[allow(...)]` attribute to carry a `reason = "…"` field. A bare
+# `#[allow(some_lint)]` is opaque: a reader cannot tell whether it suppresses a
+# known false-positive, encodes a deliberate design choice, or is stale tech debt.
+# Forcing a reason makes the suppression self-documenting — the *why* lives next
+# to the attribute, not in a PR description that is hard to find later. It also
+# makes stale allows visible at review time: if you cannot articulate a reason,
+# the allow probably should not exist. This is consistent with the crate's existing
+# practice of requiring `# Errors` / `# Panics` doc sections and detailed comments
+# on every lint entry in this file.
+allow_attributes_without_reason = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
