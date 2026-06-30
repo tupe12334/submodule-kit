@@ -121,6 +121,15 @@ explicit_iter_loop = "deny"
 # `indexing_slicing`, adding `unimplemented` closes the remaining gap and makes
 # the no-runtime-panic contract enforced by the full set of lints complete.
 unimplemented = "deny"
+# Require a `# Panics` section in the doc comment of any public, documented
+# function that can panic. This is the natural complement to `missing_errors_doc`:
+# just as callers deserve to know under which conditions a `Result`-returning
+# function fails, they deserve to know when a function may abort. Because this
+# crate already denies `panic`, `unwrap_used`, `expect_used`, `indexing_slicing`,
+# `todo`, and `unimplemented`, there are currently zero violations — enabling
+# the lint is a forward-looking guard that prevents a future panicking path from
+# shipping without documentation.
+missing_panics_doc = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
