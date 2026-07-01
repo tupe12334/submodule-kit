@@ -130,6 +130,14 @@ unimplemented = "deny"
 # the lint is a forward-looking guard that prevents a future panicking path from
 # shipping without documentation.
 missing_panics_doc = "deny"
+# Forbid an `else` block following an `if` branch that always diverges (`return`,
+# `break`, `continue`, or a `panic!`-like call). Once the `if` branch exits, the
+# code after it only runs when the condition was false, so the `else` wrapper
+# adds a level of nesting without changing behavior. Removing it flattens
+# control flow and keeps the guard-clause style already enforced by this
+# crate's other early-return-friendly lints. No current violations exist, so
+# `deny` locks in the clean state.
+redundant_else = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
