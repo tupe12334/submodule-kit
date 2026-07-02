@@ -138,6 +138,13 @@ missing_panics_doc = "deny"
 # crate's other early-return-friendly lints. No current violations exist, so
 # `deny` locks in the clean state.
 redundant_else = "deny"
+# Forbid `dbg!()` in production code. The macro writes to stderr and is a
+# quick debugging aid, not production output; a forgotten call in a CLI tool
+# pollutes the structured, user-facing output every user sees. No current
+# violations exist, so `deny` locks in the clean state and closes the
+# remaining common debugging escape hatch alongside `panic`, `unwrap_used`,
+# `expect_used`, `todo`, and `unimplemented`.
+dbg_macro = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
