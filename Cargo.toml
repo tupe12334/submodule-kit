@@ -131,6 +131,30 @@ unimplemented = "deny"
 # practice of requiring `# Errors` / `# Panics` doc sections and detailed comments
 # on every lint entry in this file.
 allow_attributes_without_reason = "deny"
+# Require a `# Panics` section in the doc comment of any public, documented
+# function that can panic. This is the natural complement to `missing_errors_doc`:
+# just as callers deserve to know under which conditions a `Result`-returning
+# function fails, they deserve to know when a function may abort. Because this
+# crate already denies `panic`, `unwrap_used`, `expect_used`, `indexing_slicing`,
+# `todo`, and `unimplemented`, there are currently zero violations — enabling
+# the lint is a forward-looking guard that prevents a future panicking path from
+# shipping without documentation.
+missing_panics_doc = "deny"
+# Forbid an `else` block following an `if` branch that always diverges (`return`,
+# `break`, `continue`, or a `panic!`-like call). Once the `if` branch exits, the
+# code after it only runs when the condition was false, so the `else` wrapper
+# adds a level of nesting without changing behavior. Removing it flattens
+# control flow and keeps the guard-clause style already enforced by this
+# crate's other early-return-friendly lints. No current violations exist, so
+# `deny` locks in the clean state.
+redundant_else = "deny"
+# Forbid `dbg!()` in production code. The macro writes to stderr and is a
+# quick debugging aid, not production output; a forgotten call in a CLI tool
+# pollutes the structured, user-facing output every user sees. No current
+# violations exist, so `deny` locks in the clean state and closes the
+# remaining common debugging escape hatch alongside `panic`, `unwrap_used`,
+# `expect_used`, `todo`, and `unimplemented`.
+dbg_macro = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
