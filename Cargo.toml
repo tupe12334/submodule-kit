@@ -42,6 +42,11 @@ expect_used = "deny"
 # `Result`. Recoverable failures should propagate as errors so the user gets a
 # clear message and a non-zero exit code.
 panic = "deny"
+# Flag `pub(crate)` items declared inside a private module: the module is already
+# unreachable from outside the crate, so the `(crate)` restriction adds nothing.
+# A plain `pub` expresses the same effective visibility with less noise and keeps
+# visibility modifiers honest and easy to scan.
+redundant_pub_crate = "deny"
 # Forbid direct slice/array indexing (`xs[i]`, `xs[a..b]`) in production code.
 # An out-of-bounds index panics with an opaque message, the exact failure mode
 # `unwrap_used`, `expect_used` and `panic` already forbid. This pushes the code
@@ -54,6 +59,15 @@ indexing_slicing = "deny"
 # generics), so this keeps the crate's public documentation accurate and
 # readable. Complements `missing_errors_doc` in raising overall doc quality.
 doc_markdown = "deny"
+# Forbid taking an argument by value (`String`, `Vec<T>`, a struct) when the
+# function only reads it and never needs ownership. Passing by value forces the
+# caller to either give up its own copy or `.clone()` at the call site — an
+# avoidable allocation — and hides from the signature whether the value is
+# actually consumed. Borrowing (`&str`, `&[T]`, `&T`) makes the contract honest
+# and lets callers keep their data. There are no violations in `src` today, so
+# this rule carries zero current cost and simply keeps the library's API taking
+# only the ownership it genuinely needs as it grows.
+needless_pass_by_value = "deny"
 # Require the `Self` keyword instead of repeating the concrete type name inside an
 # `impl` block. Using `Self` keeps the implementation tied to the type it belongs to,
 # so renaming the type touches one line instead of many, and removes ambiguity about
@@ -65,19 +79,25 @@ use_self = "deny"
 # precisely and guards against a later type change silently turning a cheap copy
 # into an expensive `Clone`.
 cloned_instead_of_copied = "deny"
+# Forbid `todo!()` in production code. The macro expands to a panic, so a
+# placeholder left in a shipped path aborts the CLI with an opaque message at the
+# moment a user exercises it. This closes a gap left by `panic`, `unwrap_used`,
+# `expect_used` and `indexing_slicing`, which already forbid the other ways code
+# can panic instead of returning a handled `Result`: unfinished work must surface
+# at compile time, not as a runtime crash for the user.
+todo = "deny"
 # Forbid `.map(f).unwrap_or(d)` / `.map(f).unwrap_or_else(g)` chains on
 # `Option`/`Result`. They read as two steps and, with `unwrap_or`, build the
 # default value on every call even when it isn't used. The single-call
 # `.map_or(d, f)` / `.map_or_else(g, f)` express the same intent more directly
 # and only construct the default on the `None`/`Err` path.
 map_unwrap_or = "deny"
-# Forbid an `else` block that follows an `if` branch which always diverges
-# (`return`, `break`, `continue`, or a never-returning call). In that case the
-# `else` is redundant: the code after the `if` only runs when the condition was
-# false, so the `else` body can be de-indented. Dropping it flattens control
-# flow and reinforces the early-return / guard-clause style that pairs with the
-# crate's `unwrap_used`/`expect_used`/`panic`/`indexing_slicing` lints.
-redundant_else = "deny"
+# Require item definitions (`fn`, `const`, `struct`, nested `use`, etc.) to come
+# before the statements of an enclosing block rather than being interleaved
+# between them. A reader scanning a function body expects executable steps, not a
+# helper definition buried mid-flow; hoisting items to the top keeps the
+# statement sequence linear and makes the block's local helpers easy to find.
+items_after_statements = "deny"
 # Inline simple variables directly into format strings (`println!("{name}")`)
 # instead of passing them as trailing positional/named args (`println!("{}", name)`).
 # The crate targets `edition = "2024"`, where inline format captures are idiomatic;
@@ -93,6 +113,38 @@ uninlined_format_args = "deny"
 # violations exist, so `deny` locks in the clean state and prevents future
 # regressions.
 explicit_iter_loop = "deny"
+# Forbid `unimplemented!()` in production code. Like `todo!()` and `panic!()`,
+# it expands to a panic at runtime rather than surfacing a compile-time error or
+# a handled `Result`. Shipping an `unimplemented!()` call means a user can hit a
+# code path and receive an opaque crash instead of a clear error message. Since
+# the crate already bans `todo`, `panic`, `unwrap_used`, `expect_used`, and
+# `indexing_slicing`, adding `unimplemented` closes the remaining gap and makes
+# the no-runtime-panic contract enforced by the full set of lints complete.
+unimplemented = "deny"
+# Require a `# Panics` section in the doc comment of any public, documented
+# function that can panic. This is the natural complement to `missing_errors_doc`:
+# just as callers deserve to know under which conditions a `Result`-returning
+# function fails, they deserve to know when a function may abort. Because this
+# crate already denies `panic`, `unwrap_used`, `expect_used`, `indexing_slicing`,
+# `todo`, and `unimplemented`, there are currently zero violations — enabling
+# the lint is a forward-looking guard that prevents a future panicking path from
+# shipping without documentation.
+missing_panics_doc = "deny"
+# Forbid an `else` block following an `if` branch that always diverges (`return`,
+# `break`, `continue`, or a `panic!`-like call). Once the `if` branch exits, the
+# code after it only runs when the condition was false, so the `else` wrapper
+# adds a level of nesting without changing behavior. Removing it flattens
+# control flow and keeps the guard-clause style already enforced by this
+# crate's other early-return-friendly lints. No current violations exist, so
+# `deny` locks in the clean state.
+redundant_else = "deny"
+# Forbid `dbg!()` in production code. The macro writes to stderr and is a
+# quick debugging aid, not production output; a forgotten call in a CLI tool
+# pollutes the structured, user-facing output every user sees. No current
+# violations exist, so `deny` locks in the clean state and closes the
+# remaining common debugging escape hatch alongside `panic`, `unwrap_used`,
+# `expect_used`, `todo`, and `unimplemented`.
+dbg_macro = "deny"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
