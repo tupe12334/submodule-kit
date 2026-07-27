@@ -1,13 +1,15 @@
-use crate::submodule::parse_gitmodules;
+use crate::strings;
+use crate::submodule::submodules;
 
 /// Print every configured submodule (path, url, and optional branch).
 ///
 /// # Errors
 ///
-/// Returns an error if the repository's `.gitmodules` file cannot be read or
-/// parsed (see [`parse_gitmodules`]).
+/// Returns an error if the git repository cannot be opened or its submodule
+/// list cannot be read (see [`submodules`]).
 pub fn run() -> Result<(), String> {
-    let submodules = parse_gitmodules()?;
+    let repo = git2::Repository::open(".").map_err(|e| strings::err_open_repo(&e))?;
+    let submodules = submodules(&repo)?;
     let col_width = submodules.iter().map(|s| s.path.len()).max().unwrap_or(0);
     for sub in &submodules {
         match &sub.branch {

@@ -1,5 +1,20 @@
 use super::*;
-use tempfile::tempdir;
+use tempfile::{TempDir, tempdir};
+
+/// Create a temporary git repository whose working tree contains a
+/// `.gitmodules` file with the given contents. libgit2 reads this file when
+/// `Repository::submodules` is called, so it exercises the same path the CLI
+/// uses at runtime.
+fn repo_with_gitmodules(content: &str) -> (TempDir, git2::Repository) {
+    let dir = tempdir().unwrap();
+    let repo = git2::Repository::init(dir.path()).unwrap();
+    std::fs::write(dir.path().join(".gitmodules"), content).unwrap();
+    (dir, repo)
+}
+
+fn find<'a>(subs: &'a [SubmoduleInfo], path: &str) -> &'a SubmoduleInfo {
+    subs.iter().find(|s| s.path == path).unwrap()
+}
 
 #[test]
 fn short_truncates_long_sha() {
@@ -17,43 +32,50 @@ fn short_empty_string() {
 }
 
 #[test]
-fn parse_empty_content() {
-    let result = parse_gitmodules_str("").unwrap();
-    assert!(result.is_empty());
+fn submodules_empty_when_no_gitmodules() {
+    let dir = tempdir().unwrap();
+    let repo = git2::Repository::init(dir.path()).unwrap();
+    let subs = submodules(&repo).unwrap();
+    assert!(subs.is_empty());
 }
 
 #[test]
-fn parse_single_submodule_with_branch() {
-    let content = r#"
+fn submodules_single_with_branch() {
+    let (_dir, repo) = repo_with_gitmodules(
+        r#"
 [submodule "foo"]
     path = foo
     url = https://example.com/foo.git
     branch = main
-"#;
-    let subs = parse_gitmodules_str(content).unwrap();
+"#,
+    );
+    let subs = submodules(&repo).unwrap();
     assert_eq!(subs.len(), 1);
-    assert_eq!(subs[0].path, "foo");
-    assert_eq!(subs[0].url, "https://example.com/foo.git");
-    assert_eq!(subs[0].branch.as_deref(), Some("main"));
+    let foo = find(&subs, "foo");
+    assert_eq!(foo.url, "https://example.com/foo.git");
+    assert_eq!(foo.branch.as_deref(), Some("main"));
 }
 
 #[test]
-fn parse_single_submodule_without_branch() {
-    let content = r#"
+fn submodules_single_without_branch() {
+    let (_dir, repo) = repo_with_gitmodules(
+        r#"
 [submodule "bar"]
     path = bar
     url = https://example.com/bar.git
-"#;
-    let subs = parse_gitmodules_str(content).unwrap();
+"#,
+    );
+    let subs = submodules(&repo).unwrap();
     assert_eq!(subs.len(), 1);
-    assert_eq!(subs[0].path, "bar");
-    assert_eq!(subs[0].url, "https://example.com/bar.git");
-    assert!(subs[0].branch.is_none());
+    let bar = find(&subs, "bar");
+    assert_eq!(bar.url, "https://example.com/bar.git");
+    assert!(bar.branch.is_none());
 }
 
 #[test]
-fn parse_multiple_submodules() {
-    let content = r#"
+fn submodules_multiple() {
+    let (_dir, repo) = repo_with_gitmodules(
+        r#"
 [submodule "a"]
     path = a
     url = https://example.com/a.git
@@ -61,47 +83,27 @@ fn parse_multiple_submodules() {
 [submodule "b"]
     path = b
     url = https://example.com/b.git
-"#;
-    let subs = parse_gitmodules_str(content).unwrap();
+"#,
+    );
+    let subs = submodules(&repo).unwrap();
     assert_eq!(subs.len(), 2);
-    assert_eq!(subs[0].path, "a");
-    assert_eq!(subs[1].path, "b");
+    find(&subs, "a");
+    find(&subs, "b");
 }
 
+/// The previous hand-rolled parser matched the exact byte sequences
+/// `"path = "` / `"url = "`, so a `.gitmodules` written without spaces around
+/// `=` (which `git` itself accepts) was mis-parsed. libgit2 uses the real
+/// git-config grammar, so these files now parse correctly.
 #[test]
-fn parse_missing_path_returns_error() {
-    let content = r#"
-[submodule "bad"]
-    url = https://example.com/bad.git
-"#;
-    let err = parse_gitmodules_str(content).unwrap_err();
-    assert!(err.contains("bad"));
-    assert!(err.contains("path"));
-}
-
-#[test]
-fn parse_missing_url_returns_error() {
-    let content = r#"
-[submodule "bad"]
-    path = bad
-"#;
-    let err = parse_gitmodules_str(content).unwrap_err();
-    assert!(err.contains("bad"));
-    assert!(err.contains("url"));
-}
-
-#[test]
-fn parse_ignores_non_submodule_lines() {
-    let content = r#"
-[core]
-    repositoryformatversion = 0
-[submodule "x"]
-    path = x
-    url = https://example.com/x.git
-"#;
-    let subs = parse_gitmodules_str(content).unwrap();
+fn submodules_handles_no_spaces_around_equals() {
+    let (_dir, repo) = repo_with_gitmodules(
+        "[submodule \"tight\"]\n\tpath=tight\n\turl=https://example.com/tight.git\n",
+    );
+    let subs = submodules(&repo).unwrap();
     assert_eq!(subs.len(), 1);
-    assert_eq!(subs[0].path, "x");
+    let tight = find(&subs, "tight");
+    assert_eq!(tight.url, "https://example.com/tight.git");
 }
 
 #[test]

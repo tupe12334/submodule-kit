@@ -7,6 +7,9 @@ fn list_with_submodules_branch_and_no_branch() {
     let _guard = crate::commands::is::CWD_MUTEX.lock().unwrap();
     let dir = tempdir().unwrap();
     let original = std::env::current_dir().unwrap();
+    // `list` now reads submodules through libgit2, so the working directory must
+    // be a git repository.
+    git2::Repository::init(dir.path()).unwrap();
     let gitmodules = concat!(
         "[submodule \"with\"]\n",
         "    path = with\n",
