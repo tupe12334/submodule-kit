@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, reason = "string constants are part of the public API surface; not every constant is used in every binary invocation")]
 
 // ── file paths ────────────────────────────────────────────────────────────────
 pub const GITMODULES_FILE: &str = ".gitmodules";
